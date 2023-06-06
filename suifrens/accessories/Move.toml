@@ -1,0 +1,11 @@
+[package]
+name = "suifrens-accessories"
+version = "0.0.1"
+
+[dependencies.suifrens]
+local = "../suifrens"
+
+[addresses]
+accessories = "0x0"
+sui = "0x2"
+suifrens = "0xee496a0cc04d06a345982ba6697c90c619020de9e274408c7819f787ff66e1a1"
