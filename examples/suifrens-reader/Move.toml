@@ -4,8 +4,7 @@ version = "0.0.1"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "4c9993fa0" }
-# suifrens = { git = "https://github.com/MystenLabs/mysten-apps.git", subdir = "suifrens/suifrens", rev = "testnet" }
-suifrens = { local = "../../suifrens/suifrens" }
+suifrens = { git = "https://github.com/MystenLabs/mysten-apps.git", subdir = "suifrens/suifrens", rev = "testnet" }
 
 [addresses]
 sf_reader = "0x0"
