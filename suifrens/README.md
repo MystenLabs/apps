@@ -18,8 +18,8 @@ SuiFrens application consists of multiple packages:
 
 To use SuiFrens as a dependency, add this to your Move.toml:
 ```
-suifrens = { git = "https://github.com/MystenLabs/mysten-apps.git", subdir = "suifrens/suifrens", rev = "testnet" }
-accessories = { git = "https://github.com/MystenLabs/mysten-apps.git", subdir = "suifrens/accessories", rev = "testnet" }
+suifrens = { git = "https://github.com/MystenLabs/apps.git", subdir = "suifrens/suifrens", rev = "testnet" }
+accessories = { git = "https://github.com/MystenLabs/apps.git", subdir = "suifrens/accessories", rev = "testnet" }
 ```
 
 See the [examples](../examples/) for sample applications using SuiFrens.
