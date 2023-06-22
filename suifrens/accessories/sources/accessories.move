@@ -84,6 +84,13 @@ module accessories::accessories {
 
     // === Reads ===
 
+    /// Accessor to allow third-party apps to query if a `SuiFren` has an accessory
+    /// with the given `type`.
+    public fun has_type<T> (sf: &SuiFren<T>, type: String): bool {
+        let uid = suifrens::uid(sf);
+        dof::exists_(uid, AccessoryKey { type })
+    }
+
     /// Accessor for the `name` field of the `Accessory`.
     public fun name(accessory: &Accessory): String {
         accessory.name
