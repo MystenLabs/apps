@@ -1,6 +1,6 @@
 [package]
 name = "suifrens"
-version = "0.0.1"
+version = "0.0.2"
 published-at = "0x8894fa02fc6f36cbc485ae9145d05f247a78e220814fb8419ab261bd81f08f32"
 
 [dependencies]
