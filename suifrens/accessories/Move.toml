@@ -1,11 +1,12 @@
 [package]
 name = "suifrens-accessories"
 version = "0.0.1"
+published-at = "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d"
 
 [dependencies.suifrens]
 local = "../suifrens"
 
 [addresses]
-accessories = "0x0"
+accessories = "0x15a2fe781ae848c3f108eddc0298649ed9e76da4e9103b5e0bd6f363cca1d56d"
 sui = "0x2"
 suifrens = "0x80d7de9c4a56194087e0ba0bf59492aa8e6a5ee881606226930827085ddf2332"
