@@ -1,0 +1,10 @@
+[package]
+name = "oracle"
+version = "0.0.1"
+published-at = "0x8378b3bd39931aa74a6aa3a820304c1109d327426e4275183ed0b797eb6660a8"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+oracle = "0x8378b3bd39931aa74a6aa3a820304c1109d327426e4275183ed0b797eb6660a8"
