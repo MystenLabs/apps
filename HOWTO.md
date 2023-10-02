@@ -24,6 +24,10 @@ This document describes the ways to use and contribute to the MystenLabs Apps Re
 
 4. Once the PR is approved and merged, create a new tag with the version you want to publish. The tag should be created from the `main` or `testnet` branch depending on the environment you want to publish to. Testnet should always be published prior to mainnet.
 
+## Open Questions
+
+- `CHANGELOG` for Move packages - how to handle it? Shall we create a tool that would help with that?
+
 ## Contributing
 
 Contributions are welcome! While some of them can't be applied directly due to mirroring, they can be applied to the original repositories and then migrated here. We encourage you to open issues and PRs to discuss and propose changes.
