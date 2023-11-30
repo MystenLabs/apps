@@ -1,9 +1,10 @@
 [package]
 name = "Quorum Upgrade"
 version = "0.0.1"
+published-at = "0x9722f37d05ba8dd7295e0828edf00849aea17411e76abc3f544ad22069cae733"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-quorum_upgrade_policy = "0x0"
+quorum_upgrade_policy = "0x9722f37d05ba8dd7295e0828edf00849aea17411e76abc3f544ad22069cae733"
