@@ -1,7 +1,7 @@
 # Quorum Upgrade Policy
 Upgrading packages is a key feature of any software development. Blockchains and Sui are no
 different in that requirement. Please refer to
-[Sui Move Concepts - Pacakges](https://docs.sui.io/concepts/sui-move-concepts/packages)
+[Sui Move Concepts - Packages](https://docs.sui.io/concepts/sui-move-concepts/packages)
 for detailed information on publishing and upgrading of packages.<br>
 However blockchain applications that manage assets have important requirements in terms
 of security and safety. DeFi protocols are particularly exposed to those requirements, in that
@@ -16,7 +16,7 @@ There is an obvious tension among those requirements, and a tension between usin
 an immutable package - which gives full guarantees over rug pull behavior - and
 expecting a package to evolve in order to provide more features and bug fixes
 if needed.<br>
-The general expectation of a pacakge lifetime is for a package to start with a
+The general expectation of a package lifetime is for a package to start with a
 compatible upgrade policy and evolve over time into an immutable package.
 Steps towards immutability are going through additive only upgrades, and
 dependencies only upgrades. Those are well described in the
@@ -62,7 +62,7 @@ over protocols they buy into.
 
 Also notice that there is no incentive for a publisher to use random addresses
 or addresses (entities) that have not accepted the role of voters for a given package.
-If an entity does not know about a package and/or does not want to partecipate in voting
+If an entity does not know about a package and/or does not want to participate in voting
 that package can become effectively immutable as it may never reach the quorum
 required to upgrade. In that respect users have a guarantee that
 what they get into is what they are going to stick with.
@@ -94,7 +94,7 @@ a `VotingCap` that gives them the ability and rights to vote.
 3. `ProposedUpgrade`: this is a proposed upgrade that will be voted. The `ProposedUpgrade`
 contains the digest of the new package which can and must used to verify the code.
 
-The API to estblish the policy and to propose, vote and commit an upgrade works
+The API to establish the policy and to propose, vote and commit an upgrade works
 as follows:
 - `quorum_upgrade_policy::new` is used to create the `QuorumUpgradeCap`. 
 The `UpgradeCap` of the package to protect is passed in, together with the 
@@ -113,7 +113,7 @@ with a call to `sui move build --dump-bytecode-as-base64` against the code of
 the upgrade. The result of `propose_upgrade` is the creation of a `ProposedUpgrade`
 shared object that can be accessed by voters to vote for the proposal.
 
-At this point the publisher would proide the voter with the soure code so that
+At this point the publisher would provide the voter with the soure code so that
 each of them can run the same command (`sui move build --dump-bytecode-as-base64`)
 to verify that the digest matches that of the proposal, and then review the code.
 Once satisfied with the code, voters can and should vote for it
@@ -156,9 +156,9 @@ one (e.g. additive only). We feel that process should likely go through
 a voting process and we plan to implement that.
 
 It is also not possible to transfer a `VotingCap`. We think that should have
-a policy as well, as freely transfer `VotingCap` could someone erode user trust.
-If a user trusts the parties involved in the policy, it does not seem proper
-to be able to switch those at will. It's possible that voting for a transfer
+a policy as well, as allowing the `VotingCap` to be transferred freely can erode 
+user trust. If a user trusts the parties involved in the policy, it does not seem 
+proper to be able to switch those at will. It's possible that voting for a transfer
 is all that will be required, however we are still considering the alternatives.
 
 Shared object deletion is coming very soon, and today the policy protocol is
@@ -174,7 +174,7 @@ will not work right now. However we thought it was important to expose
 that API right now so that once shared object deletion is avaiable,
 `ProposedUpgrade` instances can be deleted and the storage cost recovered.
 
-We are also considering offer an alternative way to vote a proposal by
+We are also considering offering an alternative way to vote in a proposal by
 creating and giving voters a `Ballot` object. That `Ballot` could be
 transferred and would allow someone to pass responsibilities of a vote
 to a third party. However, unlike transferring a `VotingCap`, a `Ballot`
