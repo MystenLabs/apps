@@ -14,9 +14,9 @@ module freezer::freezer {
     }
 
     #[allow(lint(freeze_wrapped))]
-    /// Adding an `entry` modifier to support explorers and automatic UIs to
-    /// call this function. Normally `entry` is not necessary due to `public`.
-    entry public fun freeze_object<T: key + store>(obj: T, ctx: &mut TxContext) {
+    /// Only `entry` to never be called in another module. The caller needs
+    /// to make an explicit call to `freeze_object` to freeze an object.
+    entry fun freeze_object<T: key + store>(obj: T, ctx: &mut TxContext) {
         transfer::freeze_object(Ice {
             id: object::new(ctx),
             obj,
