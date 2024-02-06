@@ -1,0 +1,10 @@
+[package]
+name = "freezer"
+published-at = "0xd59200b49b4ad219ad4acc1ccaa77e7f9ec199f1167d9b96cf7ea848d172ae1b"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+freezer = "0xd59200b49b4ad219ad4acc1ccaa77e7f9ec199f1167d9b96cf7ea848d172ae1b"
+upgrade_cap_ice = "0x8eac24531c27b642c4ca7f2e48aaea8abd1c3fed3238b0fa00a3a0a9e16fabf9"
