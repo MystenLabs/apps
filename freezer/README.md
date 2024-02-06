@@ -17,7 +17,8 @@ You can use this module for these types:
 
 You **should never use this module** for these types:
 
-- `sui::package::Publisher` - use `sui::package::burn_publisher` to unpack;
+- `sui::package::Publisher` - use `sui::package::burn_publisher` to unpack and get a rebate;
+- `sui::package::UpgradeCap` - use `sui::package::make_immutable` to unpack and get a rebate;
 
 ## Guarantees
 
@@ -29,6 +30,8 @@ You **should never use this module** for these types:
 
 - To check that this code matches its onchain version, run: `sui client verify-source`
 - The UpgradeCap for the object is on Ice! [See it yourself](https://suiexplorer.com/object/0x81861608525f8e7febd113783681bebaab575de2c1f986170c159b69baff8e06)
+
+*Even though the UpgradeCap for this package is frozen for illustration purposes, it is not recommended to freeze the UpgradeCap of a package. Instead, you should use `sui::package::make_immutable` to unpack and get a rebate.*
 
 ## Usage (only mainnet)
 
