@@ -51,9 +51,20 @@ module kiosk::personal_kiosk {
     public fun new(
         kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext
     ): PersonalKioskCap {
-        assert!(kiosk::has_access(kiosk, &cap), EWrongKiosk);
+        new_custom(kiosk, cap, sender(ctx), ctx)
+    }
 
-        let owner = sender(ctx);
+    /// Wrap the KioskOwnerCap making the Kiosk "owned" and non-transferable
+    /// for a given address.
+    /// The `PersonalKioskCap` is returned to allow chaining within a PTB, but
+    /// the value must be consumed by the `transfer_to_sender` call in any case.
+    public fun new_custom(
+        kiosk: &mut Kiosk,
+        cap: KioskOwnerCap,
+        owner: address,
+        ctx: &mut TxContext,
+    ): PersonalKioskCap {
+        assert!(kiosk::has_access(kiosk, &cap), EWrongKiosk);
 
         // set the owner property of the Kiosk
         kiosk::set_owner(kiosk, &cap, ctx);
