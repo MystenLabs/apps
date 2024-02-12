@@ -5,7 +5,7 @@ import { SuiObjectChange } from '@mysten/sui.js/client';
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui.js/utils';
 import { GridIcon, MinusIcon, PersonIcon } from '@radix-ui/react-icons';
-import { Button, Flex, Grid, Switch, TextField } from '@radix-ui/themes';
+import { Button, Flex, Grid, TextField } from '@radix-ui/themes';
 import { useEffect, useState } from 'react';
 
 import { MultisigData } from '../components/MultisigData';
@@ -35,7 +35,6 @@ export function NewQuorumUpgrade() {
 	const [selectedCap, setSelectedCap] = useState('');
 	const [votesRequired, setVotesRequired] = useState<number | undefined>(undefined);
 	const [addresses, setAddresses] = useState<string[]>([]);
-	const [shareObject, setShareObject] = useState(false);
 
 	const addAddress = () => {
 		setAddresses([...addresses, '']);
@@ -84,17 +83,7 @@ export function NewQuorumUpgrade() {
 			],
 		});
 
-		if (shareObject) {
-			txb.moveCall({
-				target: `0x2::transfer::public_share_object`,
-				arguments: [quorumUpgradeCap],
-				typeArguments: [
-					`${UPGRADE_POLICY_PACKAGE_ADDRESS[network]}::quorum_upgrade_policy::QuorumUpgradeCap`,
-				],
-			});
-		} else {
-			txb.transferObjects([quorumUpgradeCap], txb.pure.address(address));
-		}
+		txb.transferObjects([quorumUpgradeCap], txb.pure.address(address));
 
 		const res = await executeTransaction(txb);
 
@@ -195,11 +184,6 @@ export function NewQuorumUpgrade() {
 							placeholder="How many votes are required?"
 						/>
 					</TextField.Root>
-				</div>
-
-				<div className="flex gap-5 flex-wrap items-center">
-					Do you want to share the `QuorumUpgradeCap`?
-					<Switch checked={shareObject} onCheckedChange={setShareObject} />
 				</div>
 
 				<div>

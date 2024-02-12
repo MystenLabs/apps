@@ -11,6 +11,24 @@ import { UpgradeProposalManager } from './sections/UpgradeProposalManager';
 export function QuorumDashboard() {
 	const [activeTab, setActiveTab] = useState<AvailableTabs>('upgrade-policy');
 
+	const tabs = [
+		{
+			label: 'Vote for Proposed Upgrade',
+			value: 'upgrade-policy',
+			content: <UpgradeProposalManager />,
+		},
+		{
+			label: 'Propose Upgrade',
+			value: 'propose-upgrade',
+			content: <ProposeUpgrade />,
+		},
+		{
+			label: 'Convert Package to Quorum Upgrade Policy',
+			value: 'new-quorum-upgrade',
+			content: <NewQuorumUpgrade />,
+		},
+	];
+
 	return (
 		<Tabs.Root
 			className="TabsRoot"
@@ -20,25 +38,17 @@ export function QuorumDashboard() {
 			}}
 		>
 			<Tabs.List className="TabsList" aria-label="Manage quorum upgrade" size="2">
-				<Tabs.Trigger className="TabsTrigger" value="upgrade-policy">
-					Vote for Proposed Upgrade
-				</Tabs.Trigger>
-				<Tabs.Trigger className="TabsTrigger" value="propose-upgrade">
-					Propose Upgrade
-				</Tabs.Trigger>
-				<Tabs.Trigger className="TabsTrigger" value="new-quorum-upgrade">
-					Convert Package to Quorum Upgrade Policy
-				</Tabs.Trigger>
+				{tabs.map((tab) => (
+					<Tabs.Trigger className="TabsTrigger" value={tab.value} key={tab.value}>
+						{tab.label}
+					</Tabs.Trigger>
+				))}
 			</Tabs.List>
-			<Tabs.Content className="TabsContent" value="upgrade-policy">
-				<UpgradeProposalManager />
-			</Tabs.Content>
-			<Tabs.Content className="TabsContent" value="new-quorum-upgrade">
-				<NewQuorumUpgrade />
-			</Tabs.Content>
-			<Tabs.Content className="TabsContent" value="propose-upgrade">
-				<ProposeUpgrade />
-			</Tabs.Content>
+			{tabs.map((tab) => (
+				<Tabs.Content className="TabsContent" value={tab.value} key={tab.value}>
+					{tab.content}
+				</Tabs.Content>
+			))}
 		</Tabs.Root>
 	);
 }
