@@ -126,5 +126,4 @@ module mkt::adapter {
 
     #[test_only] friend mkt::adapter_tests;
     #[test_only] friend mkt::trading_ext_tests;
-    #[test_only] friend mkt::collection_bidding_tests;
 }

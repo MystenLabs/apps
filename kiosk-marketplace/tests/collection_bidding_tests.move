@@ -13,7 +13,6 @@ module mkt::collection_bidding_tests {
         TransferPolicyCap
     };
 
-    use mkt::adapter as mkt;
     use mkt::collection_bidding_ext::{Self as bidding};
 
     /// The Marketplace witness.
@@ -39,14 +38,9 @@ module mkt::collection_bidding_tests {
         let (seller_kiosk, seller_cap) = test::get_kiosk(ctx);
         let (asset, asset_id) = test::get_asset(ctx);
 
-
         // place the asset and create a MarketPurchaseCap
-        bidding::add(&mut seller_kiosk, &seller_cap, ctx);
+        // bidding::add(&mut seller_kiosk, &seller_cap, ctx);
         kiosk::place(&mut seller_kiosk, &seller_cap, asset);
-
-        let mkt_cap = mkt::new(
-            &mut seller_kiosk, &seller_cap, asset_id, 100, ctx
-        );
 
         let (asset_policy, asset_policy_cap) = get_policy<Asset>(ctx);
         let (mkt_policy, mkt_policy_cap) = get_policy<MyMarket>(ctx);
@@ -55,8 +49,9 @@ module mkt::collection_bidding_tests {
         let (asset_request, mkt_request) = bidding::accept_market_bid(
             &mut buyer_kiosk,
             &mut seller_kiosk,
-            mkt_cap,
+            &seller_cap,
             &asset_policy,
+            asset_id,
             false,
             ctx
         );
