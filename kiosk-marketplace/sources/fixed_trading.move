@@ -51,6 +51,7 @@ module mkt::fixed_trading {
     struct ItemPurchased<phantom T, phantom Market> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
+        /// The seller address if the Kiosk is personal.
         seller: Option<address>,
     }
 
