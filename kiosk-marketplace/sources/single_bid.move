@@ -1,10 +1,16 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+/// A module for placing and managing single bids in a Kiosk. A single bid is
+/// a bid for a specific item. The module provides functions to place, accept, and
+/// cancel a bid.
 ///
-module mkt::single_bid_ext {
+/// Flow:
+/// 1. A buyer places a bid for an item with a specified `ID`.
+/// 2. A seller accepts the bid and sells the item to the buyer in a single action.
+/// 3. The seller resolves the requests for `Market` and creator.
+module mkt::single_bid {
     use std::type_name;
-    use sui::kiosk_extension as ext;
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
     use sui::transfer_policy::{Self as policy, TransferPolicy, TransferRequest};
     use sui::tx_context::TxContext;
@@ -17,6 +23,7 @@ module mkt::single_bid_ext {
 
     use kiosk::personal_kiosk;
     use kiosk::kiosk_lock_rule::Rule as LockRule;
+    use mkt::extension as ext;
     use mkt::adapter as mkt;
 
     /// Not the kiosk owner.
@@ -48,7 +55,8 @@ module mkt::single_bid_ext {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
-        is_personal: bool,
+        buyer_is_personal: bool,
+        seller_is_personal: bool,
     }
 
     /// Event emitted when a bid is cancelled.
@@ -57,19 +65,6 @@ module mkt::single_bid_ext {
         item_id: ID,
         bid: u64,
         is_personal: bool,
-    }
-
-    // === Extension ===
-
-    /// Extension permissions - `place` and `lock`.
-    const PERMISSIONS: u128 = 3;
-
-    /// The Witness for the extension.
-    struct Extension has drop {}
-
-    /// Install the extension into the Kiosk.
-    public fun add(self: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
-        ext::add(Extension {}, self, cap, PERMISSIONS, ctx)
     }
 
     // === Bidding Logic ===
@@ -83,7 +78,7 @@ module mkt::single_bid_ext {
         _ctx: &mut TxContext
     ) {
         assert!(kiosk::has_access(kiosk, cap), ENotAuthorized);
-        assert!(ext::is_installed<Extension>(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
 
         event::emit(NewBid<T, Market> {
             kiosk_id: object::id(kiosk),
@@ -93,7 +88,7 @@ module mkt::single_bid_ext {
         });
 
         bag::add(
-            ext::storage_mut(Extension {}, kiosk),
+            ext::storage_mut(kiosk),
             Bid<T, Market> { item_id },
             bid
         )
@@ -111,13 +106,13 @@ module mkt::single_bid_ext {
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
-        assert!(ext::is_installed<Extension>(buyer), EExtensionNotInstalled);
-        assert!(bag::contains(ext::storage(Extension {}, buyer), Bid<T, Market> { item_id }), ENoBid);
+        assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
+        assert!(bag::contains(ext::storage(buyer), Bid<T, Market> { item_id }), ENoBid);
         assert!(kiosk::has_item(seller, item_id), EItemNotFound);
         assert!(!kiosk::is_listed(seller, item_id), EAlreadyListed);
 
         let coin: Coin<SUI> = bag::remove(
-            ext::storage_mut(Extension {}, buyer),
+            ext::storage_mut(buyer),
             Bid<T, Market> { item_id },
         );
 
@@ -128,7 +123,8 @@ module mkt::single_bid_ext {
         event::emit(BidAccepted<T, Market> {
             kiosk_id: object::id(buyer),
             bid: amount,
-            is_personal: personal_kiosk::is_personal(buyer),
+            buyer_is_personal: personal_kiosk::is_personal(buyer),
+            seller_is_personal: personal_kiosk::is_personal(seller),
             item_id,
         });
 
@@ -144,11 +140,11 @@ module mkt::single_bid_ext {
         _ctx: &mut TxContext
     ): Coin<SUI> {
         assert!(kiosk::has_access(kiosk, kiosk_cap), ENotAuthorized);
-        assert!(ext::is_installed<Extension>(kiosk), EExtensionNotInstalled);
-        assert!(bag::contains(ext::storage(Extension {}, kiosk), Bid<T, Market> { item_id }), ENoBid);
+        assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(bag::contains(ext::storage(kiosk), Bid<T, Market> { item_id }), ENoBid);
 
         let coin: Coin<SUI> = bag::remove(
-            ext::storage_mut(Extension {}, kiosk),
+            ext::storage_mut(kiosk),
             Bid<T, Market> { item_id },
         );
 
@@ -169,9 +165,9 @@ module mkt::single_bid_ext {
     fun place_or_lock<T: key + store>(kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>) {
         let should_lock = vec_set::contains(policy::rules(policy), &type_name::get<LockRule>());
         if (should_lock) {
-            ext::lock(Extension {}, kiosk, item, policy)
+            ext::lock(kiosk, item, policy)
         } else {
-            ext::place(Extension {}, kiosk, item, policy)
+            ext::place(kiosk, item, policy)
         };
     }
 }

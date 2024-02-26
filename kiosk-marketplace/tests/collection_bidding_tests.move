@@ -5,6 +5,7 @@
 module mkt::collection_bidding_tests {
     use sui::coin;
     use sui::kiosk;
+    use sui::test_utils;
     use sui::tx_context::TxContext;
     use sui::kiosk_test_utils::{Self as test, Asset};
     use sui::transfer_policy::{
@@ -13,7 +14,7 @@ module mkt::collection_bidding_tests {
         TransferPolicyCap
     };
 
-    use mkt::collection_bidding_ext::{Self as bidding};
+    use mkt::collection_bidding::{Self as bidding};
 
     /// The Marketplace witness.
     struct MyMarket has drop {}
@@ -23,14 +24,16 @@ module mkt::collection_bidding_tests {
         let ctx = &mut test::ctx();
         let (buyer_kiosk, buyer_cap) = test::get_kiosk(ctx);
 
-        // install extension
-        bidding::add(&mut buyer_kiosk, &buyer_cap, ctx);
+        mkt::extension::add(&mut buyer_kiosk, &buyer_cap, ctx);
 
         // place bids on an Asset: 100 MIST
         bidding::place_bids<Asset, MyMarket>(
             &mut buyer_kiosk,
             &buyer_cap,
-            vector[ test::get_sui(100, ctx) ],
+            vector[
+                test::get_sui(100, ctx),
+                test::get_sui(300, ctx)
+            ],
             ctx
         );
 
@@ -59,33 +62,50 @@ module mkt::collection_bidding_tests {
         policy::confirm_request(&asset_policy, asset_request);
         policy::confirm_request(&mkt_policy, mkt_request);
 
-        return_policy(asset_policy, asset_policy_cap, ctx);
-        return_policy(mkt_policy, mkt_policy_cap, ctx);
-
         assert!(kiosk::has_item(&buyer_kiosk, asset_id), 0);
         assert!(!kiosk::has_item(&seller_kiosk, asset_id), 1);
+        assert!(kiosk::profits_amount(&seller_kiosk) == 300, 2);
 
-        let asset = kiosk::take(&mut buyer_kiosk, &buyer_cap, asset_id);
+        // do it all over again
+        let (asset, asset_id) = test::get_asset(ctx);
+        kiosk::place(&mut seller_kiosk, &seller_cap, asset);
 
-        test::return_assets(vector[ asset ]);
-        test::return_kiosk(buyer_kiosk, buyer_cap, ctx);
-        let amount = test::return_kiosk(seller_kiosk, seller_cap, ctx);
+        // second bid
+        let (asset_request, mkt_request) = bidding::accept_market_bid(
+            &mut buyer_kiosk,
+            &mut seller_kiosk,
+            &seller_cap,
+            &asset_policy,
+            asset_id,
+            false,
+            ctx
+        );
 
-        assert!(amount == 100, 2);
+        policy::confirm_request(&asset_policy, asset_request);
+        policy::confirm_request(&mkt_policy, mkt_request);
+
+        assert!(kiosk::has_item(&buyer_kiosk, asset_id), 3);
+        assert!(!kiosk::has_item(&seller_kiosk, asset_id), 4);
+        assert!(kiosk::profits_amount(&seller_kiosk) == 400, 5);
+
+        test_utils::destroy(seller_kiosk);
+        test_utils::destroy(buyer_kiosk);
+        test_utils::destroy(seller_cap);
+        test_utils::destroy(buyer_cap);
+
+        return_policy(asset_policy, asset_policy_cap, ctx);
+        return_policy(mkt_policy, mkt_policy_cap, ctx);
     }
 
-    fun get_policy<T>(
-        ctx: &mut TxContext
-    ): (TransferPolicy<T>, TransferPolicyCap<T>) {
+    fun get_policy<T>(ctx: &mut TxContext): (TransferPolicy<T>, TransferPolicyCap<T>) {
         policy::new_for_testing(ctx)
     }
 
     fun return_policy<T>(
-        policy: TransferPolicy<T>,
-        policy_cap: TransferPolicyCap<T>,
-        ctx: &mut TxContext
+        policy: TransferPolicy<T>, policy_cap: TransferPolicyCap<T>, ctx: &mut TxContext
     ): u64 {
-        let proceeds = policy::destroy_and_withdraw(policy, policy_cap, ctx);
-        coin::burn_for_testing(proceeds)
+        coin::burn_for_testing(
+            policy::destroy_and_withdraw(policy, policy_cap, ctx)
+        )
     }
 }

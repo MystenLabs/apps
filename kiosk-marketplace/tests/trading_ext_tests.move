@@ -3,7 +3,7 @@
 
 #[test_only]
 /// Tests for the marketplace `marketplace_trading_ext`.
-module mkt::trading_ext_tests {
+module mkt::fixed_trading_tests {
     use sui::coin;
     use sui::object::ID;
     use sui::kiosk_extension;
@@ -11,7 +11,7 @@ module mkt::trading_ext_tests {
     use sui::transfer_policy as policy;
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
     use sui::kiosk_test_utils::{Self as test, Asset};
-    use mkt::trading_ext as ext;
+    use mkt::fixed_trading as ext;
 
     const PRICE: u64 = 100_000;
 
@@ -69,13 +69,13 @@ module mkt::trading_ext_tests {
         let (asset, asset_id) = test::get_asset(ctx);
 
         kiosk::place(&mut kiosk, &kiosk_cap, asset);
-        ext::add(&mut kiosk, &kiosk_cap, ctx);
+        mkt::extension::add(&mut kiosk, &kiosk_cap, ctx);
         (kiosk, kiosk_cap, asset_id)
     }
 
     /// Wrap everything up; remove the extension and the asset.
     fun wrapup(kiosk: Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
-        kiosk_extension::remove<ext::Extension>(&mut kiosk, &cap);
+        kiosk_extension::remove<mkt::extension::Extension>(&mut kiosk, &cap);
         test::return_kiosk(kiosk, cap, ctx);
     }
 }

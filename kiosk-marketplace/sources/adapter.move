@@ -3,15 +3,9 @@
 
 /// The best practical approach to trading on marketplaces and favoring their
 /// fees and conditions is issuing an additional `TransferRequest` (eg `Market`).
-/// However, doing so is not always possible because it must be copied from
-/// TransferRequest<Item>. Mainly because the price of the sale is not known to
-/// the very moment of the sale. And if there's already a TransferRequest<Item>,
-/// how do we enforce the creation of an extra request? That means that sale has
-/// already happened.
-///
-/// To address this problem and also solve the extension interoperability issue,
-/// we created a `marketplace_adapter` - simple utility which wraps the
-/// `PurchaseCap` and handles the last step of the purchase flow in the Kiosk.
+/// To achieve that, the `adapter` module provides a wrapper around the `PurchaseCap`
+/// which adds an extra `Market` type parameter and forces the trade transaction
+/// sender to satisfy the `TransferPolicy<Market>` requirements.
 ///
 /// Unlike `PurchaseCap` purpose of which is to be as compatible as possible,
 /// `MarketPurchaseCap` - the wrapper - only comes with a `store` to reduce the
@@ -19,7 +13,6 @@
 /// or object.
 ///
 /// Notes:
-///
 /// - The Adapter intentionally does not have any errors built-in and the error
 /// handling needs to be implemented in the extension utilizing the Marketplace
 /// Adapter.
@@ -31,9 +24,9 @@ module mkt::adapter {
     use sui::coin::Coin;
     use sui::sui::SUI;
 
-    friend mkt::collection_bidding_ext;
-    friend mkt::single_bid_ext;
-    friend mkt::trading_ext;
+    friend mkt::collection_bidding;
+    friend mkt::fixed_trading;
+    friend mkt::single_bid;
 
     /// The `NoMarket` type is used to provide a default `Market` type parameter
     /// for a scenario when the `MarketplaceAdapter` is not used and extensions
@@ -125,5 +118,5 @@ module mkt::adapter {
     // === Test ===
 
     #[test_only] friend mkt::adapter_tests;
-    #[test_only] friend mkt::trading_ext_tests;
+    #[test_only] friend mkt::fixed_trading_tests;
 }
