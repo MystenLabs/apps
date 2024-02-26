@@ -108,6 +108,7 @@ module mkt::single_bid_ext {
         seller_cap: &KioskOwnerCap,
         policy: &TransferPolicy<T>,
         item_id: ID,
+        _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
         assert!(ext::is_installed<Extension>(buyer), EExtensionNotInstalled);

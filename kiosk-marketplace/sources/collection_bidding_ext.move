@@ -27,28 +27,20 @@ module mkt::collection_bidding_ext {
 
     use kiosk::personal_kiosk;
     use kiosk::kiosk_lock_rule::Rule as LockRule;
-    use mkt::adapter::{Self as mkt, MarketPurchaseCap, NoMarket};
+    use mkt::adapter::{Self as mkt, NoMarket};
 
     /// Trying to perform an action in another user's Kiosk.
     const ENotAuthorized: u64 = 0;
     /// Trying to accept the bid in a disabled extension.
     const EExtensionDisabled: u64 = 1;
-    /// A `PurchaseCap` was created in a different Kiosk.
-    const EIncorrectKiosk: u64 = 2;
-    /// The bid amount is less than the minimum price. This check makes sure
-    /// the seller does not lose due to a race condition. By specifying the
-    /// `min_price` in the `MarketPurchaseCap` the seller sets the minimum price
-    /// for the item. And if there's a race, and someone frontruns the seller,
-    /// the seller does not accidentally take the bid for lower than they expected.
-    const EBidDoesntMatchExpectation: u64 = 3;
     /// Trying to accept a bid using a wrong function.
-    const EIncorrectMarketArg: u64 = 4;
+    const EIncorrectMarketArg: u64 = 2;
     /// Trying to accept a bid that does not exist.
-    const EBidNotFound: u64 = 5;
+    const EBidNotFound: u64 = 3;
     /// Trying to place a bid with no coins.
-    const ENoCoinsPassed: u64 = 6;
+    const ENoCoinsPassed: u64 = 4;
     /// Trying to access the extension without installing it.
-    const EExtensionNotInstalled: u64 = 7;
+    const EExtensionNotInstalled: u64 = 5;
 
     /// A key for Extension storage - a single bid on an item of type `T` on a `Market`.
     struct Bid<phantom T, phantom Market> has copy, store, drop {}
@@ -160,14 +152,15 @@ module mkt::collection_bidding_ext {
     public fun accept_market_bid<T: key + store, Market>(
         buyer: &mut Kiosk,
         seller: &mut Kiosk,
-        mkt_cap: MarketPurchaseCap<T, Market>,
+        seller_cap: &KioskOwnerCap,
         policy: &TransferPolicy<T>,
+        item_id: ID,
         // keeping these arguments for extendability
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
         assert!(ext::is_installed<Extension>(buyer), EExtensionNotInstalled);
-        assert!(ext::is_installed<Extension>(seller), EExtensionNotInstalled);
+        assert!(kiosk::has_access(seller, seller_cap), ENotAuthorized);
 
         let storage = ext::storage_mut(Extension {}, buyer);
         assert!(bag::contains(storage, Bid<T, Market> {}), EBidNotFound);
@@ -188,10 +181,14 @@ module mkt::collection_bidding_ext {
 
         let amount = coin::value(&bid);
 
-        assert!(ext::is_enabled<Extension>(seller), EExtensionDisabled);
-        assert!(mkt::kiosk(&mkt_cap) == object::id(seller), EIncorrectKiosk);
-        assert!(mkt::min_price(&mkt_cap) <= amount, EBidDoesntMatchExpectation);
+        assert!(ext::is_enabled<Extension>(buyer), EExtensionDisabled);
+        // assert!(mkt::kiosk(&mkt_cap) == object::id(seller), EIncorrectKiosk);
+        // assert!(mkt::min_price(&mkt_cap) <= amount, EBidDoesntMatchExpectation);
         assert!(type_name::get<Market>() != type_name::get<NoMarket>(), EIncorrectMarketArg);
+
+        let mkt_cap = mkt::new(
+            seller, seller_cap, item_id, amount, ctx
+        );
 
         // Perform the purchase operation in the seller's Kiosk using the `Bid`.
         let (item, request, market_request) = mkt::purchase(seller, mkt_cap, bid, ctx);
