@@ -4,11 +4,15 @@
 /// A single extension module for the package. Eliminates the need for separate
 /// extension installation and management in every package.
 module mkt::extension {
-    use sui::transfer_policy::TransferPolicy;
+    use std::type_name;
+    use sui::transfer_policy::{Self as policy, TransferPolicy};
     use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::kiosk_extension as ext;
     use sui::tx_context::TxContext;
     use sui::bag::Bag;
+    use sui::vec_set;
+
+    use kiosk::kiosk_lock_rule::Rule as LockRule;
 
     friend mkt::collection_bidding;
     friend mkt::fixed_trading;
@@ -21,9 +25,7 @@ module mkt::extension {
     const PERMISSIONS: u128 = 3;
 
     /// Install the Marketplace Extension into the Kiosk.
-    public fun add(
-        kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext
-    ) {
+    public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
         ext::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
     }
 
@@ -61,5 +63,21 @@ module mkt::extension {
     /// Get the mutable reference to the extension storage.
     public(friend) fun storage_mut(kiosk: &mut Kiosk): &mut Bag {
         ext::storage_mut(Extension {}, kiosk)
+    }
+
+    /// Place or Lock the item into the Kiosk, based on the policy.
+    public(friend) fun place_or_lock<T: key + store>(
+        kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>
+    ) {
+        let should_lock = vec_set::contains(
+            policy::rules(policy),
+            &type_name::get<LockRule>()
+        );
+
+        if (should_lock) {
+            lock(kiosk, item, policy)
+        } else {
+            place(kiosk, item, policy)
+        };
     }
 }

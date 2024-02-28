@@ -17,19 +17,16 @@ module mkt::collection_bidding {
     use sui::tx_context::TxContext;
     use sui::coin::{Self, Coin};
     use sui::transfer_policy::{
-        Self as policy,
         TransferPolicy,
         TransferRequest,
     };
     use sui::sui::SUI;
-    use sui::vec_set;
     use sui::object::{Self, ID};
     use sui::event;
     use sui::pay;
     use sui::bag;
 
     use kiosk::personal_kiosk;
-    use kiosk::kiosk_lock_rule::Rule as LockRule;
     use mkt::adapter::{Self as mkt, NoMarket};
     use mkt::extension as ext;
 
@@ -194,7 +191,7 @@ module mkt::collection_bidding {
         });
 
         // Place or lock the item in the `source` Kiosk.
-        place_or_lock(buyer, item, policy);
+        ext::place_or_lock(buyer, item, policy);
 
         (request, market_request)
     }
@@ -212,18 +209,5 @@ module mkt::collection_bidding {
     public fun bid_amount<T: key + store, Market>(kiosk: &Kiosk): u64 {
         let coins = bag::borrow(ext::storage(kiosk), Bid<T, Market> {});
         coin::value(vector::borrow<Coin<SUI>>(coins, 0))
-    }
-
-    // === Internal ===
-
-    /// A helper function which either places or locks an item in the Kiosk depending
-    /// on the Rules set in the `TransferPolicy`.
-    fun place_or_lock<T: key + store>(kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>) {
-        let should_lock = vec_set::contains(policy::rules(policy), &type_name::get<LockRule>());
-        if (should_lock) {
-            ext::lock(kiosk, item, policy)
-        } else {
-            ext::place(kiosk, item, policy)
-        };
     }
 }

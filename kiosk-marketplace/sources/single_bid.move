@@ -10,19 +10,16 @@
 /// 2. A seller accepts the bid and sells the item to the buyer in a single action.
 /// 3. The seller resolves the requests for `Market` and creator.
 module mkt::single_bid {
-    use std::type_name;
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
-    use sui::transfer_policy::{Self as policy, TransferPolicy, TransferRequest};
+    use sui::transfer_policy::{TransferPolicy, TransferRequest};
     use sui::tx_context::TxContext;
     use sui::object::{Self, ID};
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
-    use sui::vec_set;
     use sui::event;
     use sui::bag;
 
     use kiosk::personal_kiosk;
-    use kiosk::kiosk_lock_rule::Rule as LockRule;
     use mkt::extension as ext;
     use mkt::adapter as mkt;
 
@@ -128,7 +125,7 @@ module mkt::single_bid {
             item_id,
         });
 
-        place_or_lock(buyer, item, policy);
+        ext::place_or_lock(buyer, item, policy);
         (req, mkt_req)
     }
 
@@ -156,18 +153,5 @@ module mkt::single_bid {
         });
 
         coin
-    }
-
-    // === Internal ===
-
-    /// A helper function which either places or locks an item in the Kiosk depending
-    /// on the Rules set in the `TransferPolicy`.
-    fun place_or_lock<T: key + store>(kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>) {
-        let should_lock = vec_set::contains(policy::rules(policy), &type_name::get<LockRule>());
-        if (should_lock) {
-            ext::lock(kiosk, item, policy)
-        } else {
-            ext::place(kiosk, item, policy)
-        };
     }
 }
