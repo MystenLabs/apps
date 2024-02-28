@@ -1,5 +1,5 @@
 [package]
-name = "kiosk-mkt-adapter"
+name = "kiosk-marketplace"
 
 # edition = "2024.alpha" # To use the Move 2024 edition, currently in alpha
 # license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
