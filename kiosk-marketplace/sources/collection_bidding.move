@@ -42,6 +42,8 @@ module mkt::collection_bidding {
     const ENoCoinsPassed: u64 = 4;
     /// Trying to access the extension without installing it.
     const EExtensionNotInstalled: u64 = 5;
+    /// Trying to accept a bid that doesn't match the seller's expectation.
+    const EBidDoesntMatchExpected: u64 = 6;
 
     /// A key for Extension storage - a single bid on an item of type `T` on a `Market`.
     struct Bid<phantom Market, phantom T> has copy, store, drop {}
@@ -143,6 +145,8 @@ module mkt::collection_bidding {
         seller_cap: &KioskOwnerCap,
         policy: &TransferPolicy<T>,
         item_id: ID,
+        // for race conditions protection
+        min_bid_amount: u64,
         // keeping these arguments for extendability
         _lock: bool,
         ctx: &mut TxContext
@@ -156,6 +160,8 @@ module mkt::collection_bidding {
         // Take 1 Coin from the bag - this is our bid (bids can't be empty, we
         // make sure of it).
         let bid = vector::pop_back(bag::borrow_mut(storage, Bid<T, Market> {}));
+
+        assert!(coin::value(&bid) >= min_bid_amount, EBidDoesntMatchExpected);
 
         // If there are no bids left, remove the bag and the key from the storage.
         if (bid_count<T, Market>(buyer) == 0) {

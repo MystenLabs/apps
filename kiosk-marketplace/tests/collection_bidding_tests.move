@@ -55,6 +55,7 @@ module mkt::collection_bidding_tests {
             &seller_cap,
             &asset_policy,
             asset_id,
+            300,
             false,
             ctx
         );
