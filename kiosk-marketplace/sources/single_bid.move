@@ -35,12 +35,12 @@ module mkt::single_bid {
     const ENoBid: u64 = 4;
 
     /// The dynamic field key for the Bid.
-    struct Bid<phantom T, phantom Market> has copy, store, drop { item_id: ID }
+    struct Bid<phantom Market, phantom T> has copy, store, drop { item_id: ID }
 
     // === Events ===
 
     /// Event emitted when a bid is placed.
-    struct NewBid<phantom T, phantom Market> has copy, drop {
+    struct NewBid<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
@@ -48,7 +48,7 @@ module mkt::single_bid {
     }
 
     /// Event emitted when a bid is accepted.
-    struct BidAccepted<phantom T, phantom Market> has copy, drop {
+    struct BidAccepted<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
@@ -57,7 +57,7 @@ module mkt::single_bid {
     }
 
     /// Event emitted when a bid is cancelled.
-    struct BidCancelled<phantom T, phantom Market> has copy, drop {
+    struct BidCancelled<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,

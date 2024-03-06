@@ -44,19 +44,19 @@ module mkt::collection_bidding {
     const EExtensionNotInstalled: u64 = 5;
 
     /// A key for Extension storage - a single bid on an item of type `T` on a `Market`.
-    struct Bid<phantom T, phantom Market> has copy, store, drop {}
+    struct Bid<phantom Market, phantom T> has copy, store, drop {}
 
     // === Events ===
 
     /// An event that is emitted when a new bid is placed.
-    struct NewBid<phantom T, phantom Market> has copy, drop {
+    struct NewBid<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         bids: vector<u64>,
         is_personal: bool,
     }
 
     /// An event that is emitted when a bid is accepted.
-    struct BidAccepted<phantom T, phantom Market> has copy, drop {
+    struct BidAccepted<phantom Market, phantom T> has copy, drop {
         seller_kiosk_id: ID,
         buyer_kiosk_id: ID,
         item_id: ID,
@@ -66,7 +66,7 @@ module mkt::collection_bidding {
     }
 
     /// An event that is emitted when a bid is canceled.
-    struct BidCanceled<phantom T, phantom Market> has copy, drop {
+    struct BidCanceled<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         kiosk_owner: Option<address>,
     }

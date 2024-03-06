@@ -33,7 +33,7 @@ module mkt::fixed_trading {
     // === Events ===
 
     /// An item has been listed on a Marketplace.
-    struct ItemListed<phantom T, phantom Market> has copy, drop {
+    struct ItemListed<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         price: u64,
@@ -41,14 +41,14 @@ module mkt::fixed_trading {
     }
 
     /// An item has been delisted from a Marketplace.
-    struct ItemDelisted<phantom T, phantom Market> has copy, drop {
+    struct ItemDelisted<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         is_personal: bool,
     }
 
     /// An item has been purchased from a Marketplace.
-    struct ItemPurchased<phantom T, phantom Market> has copy, drop {
+    struct ItemPurchased<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         /// The seller address if the Kiosk is personal.
