@@ -35,12 +35,12 @@ module mkt::single_bid {
     const ENoBid: u64 = 4;
 
     /// The dynamic field key for the Bid.
-    struct Bid<phantom Market, phantom T> has copy, store, drop { item_id: ID }
+    public struct Bid<phantom Market, phantom T> has copy, store, drop { item_id: ID }
 
     // === Events ===
 
     /// Event emitted when a bid is placed.
-    struct NewBid<phantom Market, phantom T> has copy, drop {
+    public struct NewBid<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
@@ -48,7 +48,7 @@ module mkt::single_bid {
     }
 
     /// Event emitted when a bid is accepted.
-    struct BidAccepted<phantom Market, phantom T> has copy, drop {
+    public struct BidAccepted<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
@@ -57,7 +57,7 @@ module mkt::single_bid {
     }
 
     /// Event emitted when a bid is cancelled.
-    struct BidCancelled<phantom Market, phantom T> has copy, drop {
+    public struct BidCancelled<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
@@ -74,18 +74,18 @@ module mkt::single_bid {
         item_id: ID,
         _ctx: &mut TxContext
     ) {
-        assert!(kiosk::has_access(kiosk, cap), ENotAuthorized);
+        assert!(kiosk.has_access(cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
 
         event::emit(NewBid<T, Market> {
             kiosk_id: object::id(kiosk),
-            bid: coin::value(&bid),
+            bid: bid.value(),
             is_personal: personal_kiosk::is_personal(kiosk),
             item_id,
         });
 
-        bag::add(
-            ext::storage_mut(kiosk),
+
+        ext::storage_mut(kiosk).add(
             Bid<T, Market> { item_id },
             bid
         )
@@ -104,16 +104,14 @@ module mkt::single_bid {
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
         assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
-        assert!(bag::contains(ext::storage(buyer), Bid<T, Market> { item_id }), ENoBid);
-        assert!(kiosk::has_item(seller, item_id), EItemNotFound);
-        assert!(!kiosk::is_listed(seller, item_id), EAlreadyListed);
+        assert!(ext::storage(buyer).contains(Bid<T, Market> { item_id }), ENoBid);
+        assert!(seller.has_item(item_id), EItemNotFound);
+        assert!(!seller.is_listed(item_id), EAlreadyListed);
 
-        let coin: Coin<SUI> = bag::remove(
-            ext::storage_mut(buyer),
-            Bid<T, Market> { item_id },
-        );
+        let coin: Coin<SUI> = ext::storage_mut(buyer)
+            .remove(Bid<T, Market> { item_id });
 
-        let amount = coin::value(&coin);
+        let amount = coin.value();
         let mkt_cap = mkt::new(seller, seller_cap, item_id, amount, ctx);
         let (item, req, mkt_req) = mkt::purchase(seller, mkt_cap, coin, ctx);
 
@@ -136,18 +134,16 @@ module mkt::single_bid {
         item_id: ID,
         _ctx: &mut TxContext
     ): Coin<SUI> {
-        assert!(kiosk::has_access(kiosk, kiosk_cap), ENotAuthorized);
+        assert!(kiosk.has_access(kiosk_cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
-        assert!(bag::contains(ext::storage(kiosk), Bid<T, Market> { item_id }), ENoBid);
+        assert!(ext::storage(kiosk).contains(Bid<T, Market> { item_id }), ENoBid);
 
-        let coin: Coin<SUI> = bag::remove(
-            ext::storage_mut(kiosk),
-            Bid<T, Market> { item_id },
-        );
+        let coin: Coin<SUI> = ext::storage_mut(kiosk)
+            .remove(Bid<T, Market> { item_id });
 
         event::emit(BidCancelled<T, Market> {
             kiosk_id: object::id(kiosk),
-            bid: coin::value(&coin),
+            bid: coin.value(),
             is_personal: personal_kiosk::is_personal(kiosk),
             item_id,
         });

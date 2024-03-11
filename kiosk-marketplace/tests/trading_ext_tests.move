@@ -4,23 +4,22 @@
 #[test_only]
 /// Tests for the marketplace `marketplace_trading_ext`.
 module mkt::fixed_trading_tests {
-    use sui::coin;
     use sui::object::ID;
     use sui::kiosk_extension;
     use sui::tx_context::TxContext;
     use sui::transfer_policy as policy;
-    use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
+    use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::kiosk_test_utils::{Self as test, Asset};
     use mkt::fixed_trading as ext;
 
     const PRICE: u64 = 100_000;
 
     /// Marketplace type.
-    struct MyMarket has drop {}
+    public struct MyMarket has drop {}
 
     #[test] fun test_list_and_delist() {
         let ctx = &mut test::ctx();
-        let (kiosk, kiosk_cap, asset_id) = prepare(ctx);
+        let (mut kiosk, kiosk_cap, asset_id) = prepare(ctx);
 
         ext::list<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, PRICE, ctx);
 
@@ -29,14 +28,14 @@ module mkt::fixed_trading_tests {
 
         ext::delist<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, ctx);
 
-        let asset = kiosk::take(&mut kiosk, &kiosk_cap, asset_id);
+        let asset = kiosk.take(&kiosk_cap, asset_id);
         test::return_assets(vector[ asset ]);
         wrapup(kiosk, kiosk_cap, ctx);
     }
 
     #[test] fun test_list_and_purchase() {
         let ctx = &mut test::ctx();
-        let (kiosk, kiosk_cap, asset_id) = prepare(ctx);
+        let (mut kiosk, kiosk_cap, asset_id) = prepare(ctx);
 
         ext::list<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, PRICE, ctx);
 
@@ -47,14 +46,14 @@ module mkt::fixed_trading_tests {
 
         // Resolve creator's Policy
         let (policy, policy_cap) = test::get_policy(ctx);
-        policy::confirm_request(&policy, req);
+        policy.confirm_request(req);
         test::return_policy(policy, policy_cap, ctx);
 
         // Resolve marketplace's Policy
         let (policy, policy_cap) = policy::new_for_testing<MyMarket>(ctx);
-        policy::confirm_request(&policy, mkt_req);
-        let proceeds = policy::destroy_and_withdraw(policy, policy_cap, ctx);
-        coin::destroy_zero(proceeds);
+        policy.confirm_request(mkt_req);
+        policy.destroy_and_withdraw(policy_cap, ctx)
+            .destroy_zero();
 
         // Deal with the Asset + Kiosk, KioskOwnerCap
         test::return_assets(vector[ item ]);
@@ -65,16 +64,16 @@ module mkt::fixed_trading_tests {
     /// - extension installed
     /// - an asset inside
     fun prepare(ctx: &mut TxContext): (Kiosk, KioskOwnerCap, ID) {
-        let (kiosk, kiosk_cap) = test::get_kiosk(ctx);
+        let (mut kiosk, kiosk_cap) = test::get_kiosk(ctx);
         let (asset, asset_id) = test::get_asset(ctx);
 
-        kiosk::place(&mut kiosk, &kiosk_cap, asset);
+        kiosk.place(&kiosk_cap, asset);
         mkt::extension::add(&mut kiosk, &kiosk_cap, ctx);
         (kiosk, kiosk_cap, asset_id)
     }
 
     /// Wrap everything up; remove the extension and the asset.
-    fun wrapup(kiosk: Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
+    fun wrapup(mut kiosk: Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
         kiosk_extension::remove<mkt::extension::Extension>(&mut kiosk, &cap);
         test::return_kiosk(kiosk, cap, ctx);
     }

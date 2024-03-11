@@ -19,7 +19,7 @@ module mkt::extension {
     friend mkt::single_bid;
 
     /// The extension Witness.
-    struct Extension has drop {}
+    public struct Extension has drop {}
 
     /// Place and Lock permissions.
     const PERMISSIONS: u128 = 3;

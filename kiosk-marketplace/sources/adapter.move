@@ -18,7 +18,7 @@
 /// Adapter.
 module mkt::adapter {
     use sui::transfer_policy::{Self as policy, TransferRequest};
-    use sui::kiosk::{Self, Kiosk, KioskOwnerCap, PurchaseCap};
+    use sui::kiosk::{Kiosk, KioskOwnerCap, PurchaseCap};
     use sui::tx_context::TxContext;
     use sui::object::ID;
     use sui::coin::Coin;
@@ -31,11 +31,11 @@ module mkt::adapter {
     /// The `NoMarket` type is used to provide a default `Market` type parameter
     /// for a scenario when the `MarketplaceAdapter` is not used and extensions
     /// maintain uniformity of emitted events. NoMarket = no marketplace.
-    struct NoMarket {}
+    public struct NoMarket {}
 
     /// The `MarketPurchaseCap` wraps the `PurchaseCap` and forces the unlocking
     /// party to satisfy the `TransferPolicy<Market>` requirements.
-    struct MarketPurchaseCap<phantom T: key + store, phantom Market> has store {
+    public struct MarketPurchaseCap<phantom T: key + store, phantom Market> has store {
         purchase_cap: PurchaseCap<T>
     }
 
@@ -47,11 +47,11 @@ module mkt::adapter {
         min_price: u64,
         ctx: &mut TxContext
     ): MarketPurchaseCap<T, Market> {
-        MarketPurchaseCap<T, Market> {
-            purchase_cap: kiosk::list_with_purchase_cap(
-                kiosk, cap, item_id, min_price, ctx
-            )
-        }
+        let purchase_cap = kiosk.list_with_purchase_cap(
+            cap, item_id, min_price, ctx
+        );
+
+        MarketPurchaseCap<T, Market> { purchase_cap }
     }
 
     /// Return the `MarketPurchaseCap` to the `Kiosk`. Similar to how the
@@ -63,7 +63,7 @@ module mkt::adapter {
         _ctx: &mut TxContext
     ) {
         let MarketPurchaseCap { purchase_cap } = cap;
-        kiosk::return_purchase_cap(kiosk, purchase_cap);
+        kiosk.return_purchase_cap(purchase_cap);
     }
 
     /// Use the `MarketPurchaseCap` to purchase an item from the `Kiosk`. Unlike
@@ -76,7 +76,7 @@ module mkt::adapter {
         _ctx: &mut TxContext
     ): (T, TransferRequest<T>, TransferRequest<Market>) {
         let MarketPurchaseCap { purchase_cap } = cap;
-        let (item, request) = kiosk::purchase_with_cap(kiosk, purchase_cap, coin);
+        let (item, request) = kiosk.purchase_with_cap(purchase_cap, coin);
         let market_request = policy::new_request(
             policy::item(&request),
             policy::paid(&request),
@@ -95,24 +95,24 @@ module mkt::adapter {
         _ctx: &mut TxContext
     ): (T, TransferRequest<T>) {
         let MarketPurchaseCap { purchase_cap } = cap;
-        kiosk::purchase_with_cap(kiosk, purchase_cap, coin)
+        kiosk.purchase_with_cap(purchase_cap, coin)
     }
 
     // === Getters ===
 
     /// Handy wrapper to read the `kiosk` field of the inner `PurchaseCap`
     public(friend) fun kiosk<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): ID {
-        kiosk::purchase_cap_kiosk(&self.purchase_cap)
+        self.purchase_cap.purchase_cap_kiosk()
     }
 
     /// Handy wrapper to read the `item` field of the inner `PurchaseCap`
     public(friend) fun item<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): ID {
-        kiosk::purchase_cap_item(&self.purchase_cap)
+        self.purchase_cap.purchase_cap_item()
     }
 
     /// Handy wrapper to read the `min_price` field of the inner `PurchaseCap`
     public(friend) fun min_price<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): u64 {
-        kiosk::purchase_cap_min_price(&self.purchase_cap)
+        self.purchase_cap.purchase_cap_min_price()
     }
 
     // === Test ===

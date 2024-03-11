@@ -33,7 +33,7 @@ module mkt::fixed_trading {
     // === Events ===
 
     /// An item has been listed on a Marketplace.
-    struct ItemListed<phantom Market, phantom T> has copy, drop {
+    public struct ItemListed<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         price: u64,
@@ -41,14 +41,14 @@ module mkt::fixed_trading {
     }
 
     /// An item has been delisted from a Marketplace.
-    struct ItemDelisted<phantom Market, phantom T> has copy, drop {
+    public struct ItemDelisted<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         is_personal: bool,
     }
 
     /// An item has been purchased from a Marketplace.
-    struct ItemPurchased<phantom Market, phantom T> has copy, drop {
+    public struct ItemPurchased<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
         item_id: ID,
         /// The seller address if the Kiosk is personal.
@@ -65,10 +65,10 @@ module mkt::fixed_trading {
         price: u64,
         ctx: &mut TxContext
     ) {
-        assert!(kiosk::has_access(kiosk, cap), ENotOwner);
+        assert!(kiosk.has_access(cap), ENotOwner);
 
         let mkt_cap = mkt::new<T, Market>(kiosk, cap, item_id, price, ctx);
-        bag::add(ext::storage_mut(kiosk), item_id, mkt_cap);
+        ext::storage_mut(kiosk).add(item_id, mkt_cap);
 
         event::emit(ItemListed<T, Market> {
             is_personal: personal_kiosk::is_personal(kiosk),
@@ -85,10 +85,10 @@ module mkt::fixed_trading {
         item_id: ID,
         ctx: &mut TxContext
     ) {
-        assert!(kiosk::has_access(kiosk, cap), ENotOwner);
-        assert!(is_listed<T, Market>(kiosk, item_id), ENotListed);
+        assert!(kiosk.has_access(cap), ENotOwner);
+        assert!(kiosk.is_listed<T, Market>(item_id), ENotListed);
 
-        let mkt_cap = bag::remove(ext::storage_mut(kiosk), item_id);
+        let mkt_cap = ext::storage_mut(kiosk).remove(item_id);
         mkt::return_cap<T, Market>(kiosk, mkt_cap, ctx);
 
         event::emit(ItemDelisted<T, Market> {
@@ -105,10 +105,10 @@ module mkt::fixed_trading {
         payment: Coin<SUI>,
         ctx: &mut TxContext
     ): (T, TransferRequest<T>, TransferRequest<Market>) {
-        assert!(is_listed<T, Market>(kiosk, item_id), ENotListed);
+        assert!(kiosk.is_listed<T, Market>(item_id), ENotListed);
 
-        let mkt_cap = bag::remove(ext::storage_mut(kiosk), item_id);
-        assert!(coin::value(&payment) == mkt::min_price(&mkt_cap), EIncorrectAmount);
+        let mkt_cap = ext::storage_mut(kiosk).remove<ID, MarketPurchaseCap<T, Market>>(item_id);
+        assert!(payment.value() == mkt_cap.min_price(), EIncorrectAmount);
 
         event::emit(ItemPurchased<T, Market> {
             seller: personal_kiosk::try_owner(kiosk),
@@ -120,6 +120,8 @@ module mkt::fixed_trading {
     }
 
     // === Getters ===
+
+    use fun is_listed as Kiosk.is_listed;
 
     /// Check if an item is currently listed on a specified Marketplace.
     public fun is_listed<T: key + store, Market>(kiosk: &Kiosk, item_id: ID): bool {

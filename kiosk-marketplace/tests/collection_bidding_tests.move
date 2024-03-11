@@ -4,7 +4,6 @@
 #[test_only]
 module mkt::collection_bidding_tests {
     use sui::coin;
-    use sui::kiosk;
     use sui::test_utils;
     use sui::tx_context::TxContext;
     use sui::kiosk_test_utils::{Self as test, Asset};
@@ -17,12 +16,12 @@ module mkt::collection_bidding_tests {
     use mkt::collection_bidding::{Self as bidding};
 
     /// The Marketplace witness.
-    struct MyMarket has drop {}
+    public struct MyMarket has drop {}
 
     #[test]
     fun test_simple_bid() {
         let ctx = &mut test::ctx();
-        let (buyer_kiosk, buyer_cap) = test::get_kiosk(ctx);
+        let (mut buyer_kiosk, buyer_cap) = test::get_kiosk(ctx);
 
         mkt::extension::add(&mut buyer_kiosk, &buyer_cap, ctx);
 
@@ -38,12 +37,12 @@ module mkt::collection_bidding_tests {
         );
 
         // prepare the seller Kiosk
-        let (seller_kiosk, seller_cap) = test::get_kiosk(ctx);
+        let (mut seller_kiosk, seller_cap) = test::get_kiosk(ctx);
         let (asset, asset_id) = test::get_asset(ctx);
 
         // place the asset and create a MarketPurchaseCap
         // bidding::add(&mut seller_kiosk, &seller_cap, ctx);
-        kiosk::place(&mut seller_kiosk, &seller_cap, asset);
+        seller_kiosk.place(&seller_cap, asset);
 
         let (asset_policy, asset_policy_cap) = get_policy<Asset>(ctx);
         let (mkt_policy, mkt_policy_cap) = get_policy<MyMarket>(ctx);
@@ -60,16 +59,16 @@ module mkt::collection_bidding_tests {
             ctx
         );
 
-        policy::confirm_request(&asset_policy, asset_request);
-        policy::confirm_request(&mkt_policy, mkt_request);
+        asset_policy.confirm_request(asset_request);
+        mkt_policy.confirm_request(mkt_request);
 
-        assert!(kiosk::has_item(&buyer_kiosk, asset_id), 0);
-        assert!(!kiosk::has_item(&seller_kiosk, asset_id), 1);
-        assert!(kiosk::profits_amount(&seller_kiosk) == 300, 2);
+        assert!(buyer_kiosk.has_item(asset_id), 0);
+        assert!(!seller_kiosk.has_item(asset_id), 1);
+        assert!(seller_kiosk.profits_amount() == 300, 2);
 
         // do it all over again
         let (asset, asset_id) = test::get_asset(ctx);
-        kiosk::place(&mut seller_kiosk, &seller_cap, asset);
+        seller_kiosk.place(&seller_cap, asset);
 
         // second bid
         let (asset_request, mkt_request) = bidding::accept_market_bid(
@@ -78,16 +77,17 @@ module mkt::collection_bidding_tests {
             &seller_cap,
             &asset_policy,
             asset_id,
+            400,
             false,
             ctx
         );
 
-        policy::confirm_request(&asset_policy, asset_request);
-        policy::confirm_request(&mkt_policy, mkt_request);
+        asset_policy.confirm_request(asset_request);
+        mkt_policy.confirm_request(mkt_request);
 
-        assert!(kiosk::has_item(&buyer_kiosk, asset_id), 3);
-        assert!(!kiosk::has_item(&seller_kiosk, asset_id), 4);
-        assert!(kiosk::profits_amount(&seller_kiosk) == 400, 5);
+        assert!(buyer_kiosk.has_item(asset_id), 3);
+        assert!(!seller_kiosk.has_item(asset_id), 4);
+        assert!(seller_kiosk.profits_amount() == 400, 5);
 
         test_utils::destroy(seller_kiosk);
         test_utils::destroy(buyer_kiosk);
