@@ -39,7 +39,7 @@ To use this package, you can call the `freeze_object` function and pass an objec
 
 ```bash
 sui client call \
-    --package 0xd59200b49b4ad219ad4acc1ccaa77e7f9ec199f1167d9b96cf7ea848d172ae1b \
+    --package 0x5b1af417fe97ce96aa3fe90918b7c2dc5560abf0654684a39fd95a559e7bf2be \
     --module freezer \
     --function freeze_object \
     --args <OBJECT> \
