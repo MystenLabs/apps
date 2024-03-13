@@ -357,14 +357,14 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         assert!(proposal.proposer == signer, ESignerMismatch);
         proposal.proposer = @0x0;
 
-        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut proposal.id, UpgradeMetadata {});
-
         event::emit(UpgradePerformed {
             upgrade_cap: proposal.upgrade_cap,
             proposal: object::id(proposal),
             digest: proposal.digest,
             proposer: signer,
         });
+
+        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut proposal.id, UpgradeMetadata {});
 
         let policy = package::upgrade_policy(&cap.upgrade_cap);
         package::authorize_upgrade(
