@@ -299,6 +299,23 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         }
     }
 
+    public fun add_all_metadata(
+        upgrade: &mut ProposedUpgrade,
+        metadata_map: VecMap<string::String, vector<u8>>,
+        ctx: &mut TxContext,
+    ) {
+        let keys = vec_map::keys(&metadata_map);
+        let len = vector::length(&keys);
+
+        let i = 0;
+        while (i < len) {
+            let key = vector::borrow(&keys, i);
+            let value = vec_map::get(&metadata_map, key);
+            add_metadata(upgrade, *key, *value, ctx);
+            i = i + 1;
+        }
+    }
+
     /// Add metadata to ProposedUpgrade object in v2
     public fun add_metadata(
         upgrade: &mut ProposedUpgrade,
