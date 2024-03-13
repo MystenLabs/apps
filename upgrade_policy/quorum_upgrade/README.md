@@ -113,7 +113,15 @@ with a call to `sui move build --dump-bytecode-as-base64` against the code of
 the upgrade. The result of `propose_upgrade` is the creation of a `ProposedUpgrade`
 shared object that can be accessed by voters to vote for the proposal.
 
-At this point the publisher would provide the voter with the soure code so that
+Publisher can also invoke `quorum_upgrade_policy::propose_upgrade_v2` providing the 
+`QuorumUpgradeCap` and the `digest` of the upgrade, which returns the 
+`ProposedUpgrade` object that can be passed into `quorum_upgrade_policy::add_metadata`
+along with `metadata`. The `metadata` is a `vector<u8>` which is an optional
+metadata field to include with the proposed_upgrade. Publisher can then
+call `quorum_upgrade_policy::share_upgrade_object` with the `ProposedUpgrade`
+object to share the object for voters to vote for the proposal.
+
+At this point the publisher would provide the voter with the source code so that
 each of them can run the same command (`sui move build --dump-bytecode-as-base64`)
 to verify that the digest matches that of the proposal, and then review the code.
 Once satisfied with the code, voters can and should vote for it

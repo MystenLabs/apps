@@ -63,6 +63,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
     use sui::vec_set::{Self, VecSet};
+    use sui::dynamic_field::{Self as df};
 
     /// The capability controlling the upgrade. 
     /// Initialized with `new` is returned to the caller to be stored as desired.
@@ -171,6 +172,9 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         proposer: address,
     }
 
+    /// struct for optional upgrade metadata
+    struct UpgradeMetadata has store, copy, drop {}
+
     /// Allowed voters must in the [1, 100] range.
     const EAllowedVotersError: u64 = 0;
     /// Required votes must be less than allowed voters.
@@ -249,6 +253,26 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         digest: vector<u8>,
         ctx: &mut TxContext,
     ) {
+        transfer::share_object(internal_propose_upgrade(cap, digest, ctx))
+    }
+
+    /// V2 of propose_upgrade, returns ProposedUpgrade object which can be used
+    /// in add_metadata function to optionally add metadata.
+    /// Must be used to call share_upgrade_object to share proposal with voters.
+    public fun propose_upgrade_v2(
+        cap: &QuorumUpgradeCap,
+        digest: vector<u8>,
+        ctx: &mut TxContext,
+
+    ): ProposedUpgrade {
+        internal_propose_upgrade(cap, digest, ctx)
+    }
+
+    fun internal_propose_upgrade(
+        cap: &QuorumUpgradeCap,
+        digest: vector<u8>,
+        ctx: &mut TxContext,
+    ): ProposedUpgrade {
         let cap_id = object::id(cap);
         let proposal_uid = object::new(ctx);
         let proposal_id = object::uid_to_inner(&proposal_uid);
@@ -263,13 +287,28 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             voters: cap.voters,
         });
 
-        transfer::share_object(ProposedUpgrade {
+        ProposedUpgrade {
             id: proposal_uid,
             upgrade_cap: cap_id,
             proposer,
             digest,
             current_voters: vec_set::empty(),
-        })
+        }
+    }
+
+    /// Add metadata to ProposedUpgrade object in v2
+    public fun add_metadata(
+        upgrade: &mut ProposedUpgrade,
+        metadata: vector<u8>,
+    ) {
+        df::add(&mut upgrade.id, UpgradeMetadata {}, metadata);
+    }
+
+    /// Share the upgrade object created by propose_upgrade_v2
+    public fun share_upgrade_object(
+        upgrade: ProposedUpgrade
+    ) {
+        transfer::share_object(upgrade)
     }
 
     /// Vote in favor of an upgrade, aborts if the voter is not for the proposed
@@ -317,6 +356,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         let signer = tx_context::sender(ctx);
         assert!(proposal.proposer == signer, ESignerMismatch);
         proposal.proposer = @0x0;
+
+        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut proposal.id, UpgradeMetadata {});
 
         event::emit(UpgradePerformed {
             upgrade_cap: proposal.upgrade_cap,
