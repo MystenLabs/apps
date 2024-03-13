@@ -304,30 +304,28 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         metadata_map: VecMap<string::String, vector<u8>>,
         ctx: &mut TxContext,
     ) {
+        assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
+        if (!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&upgrade.id, UpgradeMetadata {})) {
+            df::add(&mut upgrade.id, UpgradeMetadata {}, vec_map::empty<string::String, vector<u8>>());
+        };
+
         let keys = vec_map::keys(&metadata_map);
         let len = vector::length(&keys);
-
         let i = 0;
         while (i < len) {
             let key = vector::borrow(&keys, i);
             let value = vec_map::get(&metadata_map, key);
-            add_metadata(upgrade, *key, *value, ctx);
+            add_metadata(upgrade, *key, *value);
             i = i + 1;
         }
     }
 
     /// Add metadata to ProposedUpgrade object in v2
-    public fun add_metadata(
+    fun add_metadata(
         upgrade: &mut ProposedUpgrade,
         key: string::String,
         metadata: vector<u8>,
-        ctx: &mut TxContext,
     ) {
-        assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
-        if (!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut upgrade.id, UpgradeMetadata {})) {
-            df::add(&mut upgrade.id, UpgradeMetadata {}, vec_map::empty<string::String, vector<u8>>());
-        };
-
         let vec_map: &mut VecMap<string::String, vector<u8>> = df::borrow_mut<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut upgrade.id, UpgradeMetadata {});
         if (vec_map::contains(vec_map, &key)) {
             vec_map::remove(vec_map, &key);
