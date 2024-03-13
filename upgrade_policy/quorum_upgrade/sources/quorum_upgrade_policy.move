@@ -64,6 +64,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     use sui::tx_context::{Self, TxContext};
     use sui::vec_set::{Self, VecSet};
     use sui::dynamic_field::{Self as df};
+    use sui::vec_map::{Self, VecMap};
+    use std::string;
 
     /// The capability controlling the upgrade. 
     /// Initialized with `new` is returned to the caller to be stored as desired.
@@ -300,19 +302,27 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// Add metadata to ProposedUpgrade object in v2
     public fun add_metadata(
         upgrade: &mut ProposedUpgrade,
+        key: string::String,
         metadata: vector<u8>,
         ctx: &mut TxContext,
     ) {
         assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
-        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut upgrade.id, UpgradeMetadata {});
-        df::add(&mut upgrade.id, UpgradeMetadata {}, metadata);
+        if (!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut upgrade.id, UpgradeMetadata {})) {
+            df::add(&mut upgrade.id, UpgradeMetadata {}, vec_map::empty<string::String, vector<u8>>());
+        };
+
+        let vec_map: &mut VecMap<string::String, vector<u8>> = df::borrow_mut<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut upgrade.id, UpgradeMetadata {});
+        if (vec_map::contains(vec_map, &key)) {
+            vec_map::remove(vec_map, &key);
+        };
+        vec_map::insert(vec_map, key, metadata);
     }
 
-    /// Add metadata to ProposedUpgrade object in v2
-    public fun metadata(
-        proposal: &mut ProposedUpgrade,
-    ) {
-        df::borrow<UpgradeMetadata, vector<u8>>(&proposal.id, UpgradeMetadata {});
+    /// retrieve metadata from ProposedUpgrade object in v2
+    public fun get_metadata(
+        proposal: &ProposedUpgrade,
+    ): &VecMap<string::String, vector<u8>> {
+        df::borrow<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&proposal.id, UpgradeMetadata {})
     }
 
     /// Share the upgrade object created by propose_upgrade_v2
@@ -375,7 +385,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             proposer: signer,
         });
 
-        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut proposal.id, UpgradeMetadata {});
+        df::remove_if_exists<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut proposal.id, UpgradeMetadata {});
 
         let policy = package::upgrade_policy(&cap.upgrade_cap);
         package::authorize_upgrade(
