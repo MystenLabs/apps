@@ -191,7 +191,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     const ESignerMismatch: u64 = 6;
     /// Proposal (`QuorumUpgradeCap`) and upgrade (`ProposedUpgrade`) do not match.
     const EInvalidProposalForUpgrade: u64 = 7;
-    /// add more
+    /// Invalid address for adding metadata
     const EInvalidProposerForMetadata: u64 = 8;
 
     /// Create a `QuorumUpgradeCap` given an `UpgradeCap`.
@@ -306,6 +306,13 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
         df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut upgrade.id, UpgradeMetadata {});
         df::add(&mut upgrade.id, UpgradeMetadata {}, metadata);
+    }
+
+    /// Add metadata to ProposedUpgrade object in v2
+    public fun metadata(
+        proposal: &mut ProposedUpgrade,
+    ) {
+        df::borrow<UpgradeMetadata, vector<u8>>(&proposal.id, UpgradeMetadata {});
     }
 
     /// Share the upgrade object created by propose_upgrade_v2
