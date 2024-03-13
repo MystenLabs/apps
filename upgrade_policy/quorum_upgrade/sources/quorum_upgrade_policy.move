@@ -191,6 +191,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     const ESignerMismatch: u64 = 6;
     /// Proposal (`QuorumUpgradeCap`) and upgrade (`ProposedUpgrade`) do not match.
     const EInvalidProposalForUpgrade: u64 = 7;
+    /// add more
+    const EInvalidProposerForMetadata: u64 = 8;
 
     /// Create a `QuorumUpgradeCap` given an `UpgradeCap`.
     /// The returned instance is the only and exclusive controller of upgrades. 
@@ -263,7 +265,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         cap: &QuorumUpgradeCap,
         digest: vector<u8>,
         ctx: &mut TxContext,
-
     ): ProposedUpgrade {
         internal_propose_upgrade(cap, digest, ctx)
     }
@@ -300,7 +301,10 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     public fun add_metadata(
         upgrade: &mut ProposedUpgrade,
         metadata: vector<u8>,
+        ctx: &mut TxContext,
     ) {
+        assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
+        df::remove_if_exists<UpgradeMetadata, vector<u8>>(&mut upgrade.id, UpgradeMetadata {});
         df::add(&mut upgrade.id, UpgradeMetadata {}, metadata);
     }
 
