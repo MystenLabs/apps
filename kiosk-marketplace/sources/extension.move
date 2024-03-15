@@ -13,6 +13,7 @@ module mkt::extension {
     use sui::vec_set;
 
     use kiosk::kiosk_lock_rule::Rule as LockRule;
+    use kiosk::personal_kiosk;
 
     friend mkt::collection_bidding;
     friend mkt::fixed_trading;
@@ -26,6 +27,8 @@ module mkt::extension {
 
     /// Install the Marketplace Extension into the Kiosk.
     public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
+        // TODO: check that the kiosk is a personal kiosk
+        personal_kiosk::is_personal(kiosk);
         ext::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
     }
 

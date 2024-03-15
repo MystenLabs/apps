@@ -10,16 +10,15 @@
 /// 2. A seller accepts the bid and sells the item to the buyer in a single action.
 /// 3. The seller resolves the requests for `Market` and creator.
 module mkt::single_bid {
-    use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
+    use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::transfer_policy::{TransferPolicy, TransferRequest};
     use sui::tx_context::TxContext;
     use sui::object::{Self, ID};
     use sui::coin::{Self, Coin};
+    use sui::balance::Balance;
     use sui::sui::SUI;
     use sui::event;
-    use sui::bag;
 
-    use kiosk::personal_kiosk;
     use mkt::extension as ext;
     use mkt::adapter as mkt;
 
@@ -33,9 +32,16 @@ module mkt::single_bid {
     const EExtensionNotInstalled: u64 = 3;
     /// No bid found for the item.
     const ENoBid: u64 = 4;
+    /// Order ID mismatch
+    const EOrderMismatch: u64 = 5;
 
     /// The dynamic field key for the Bid.
     public struct Bid<phantom Market, phantom T> has copy, store, drop { item_id: ID }
+
+    public struct PlacedBid has store {
+        bid: Balance<SUI>,
+        order_id: address,
+    }
 
     // === Events ===
 
@@ -44,7 +50,7 @@ module mkt::single_bid {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
-        is_personal: bool,
+        order_id: address,
     }
 
     /// Event emitted when a bid is accepted.
@@ -52,8 +58,7 @@ module mkt::single_bid {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
-        buyer_is_personal: bool,
-        seller_is_personal: bool,
+        order_id: address,
     }
 
     /// Event emitted when a bid is cancelled.
@@ -61,7 +66,7 @@ module mkt::single_bid {
         kiosk_id: ID,
         item_id: ID,
         bid: u64,
-        is_personal: bool,
+        order_id: address,
     }
 
     // === Bidding Logic ===
@@ -72,23 +77,26 @@ module mkt::single_bid {
         cap: &KioskOwnerCap,
         bid: Coin<SUI>,
         item_id: ID,
-        _ctx: &mut TxContext
-    ) {
+        ctx: &mut TxContext
+    ): address {
         assert!(kiosk.has_access(cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
 
-        event::emit(NewBid<T, Market> {
+        let order_id = ctx.fresh_object_address();
+
+        event::emit(NewBid<Market, T> {
             kiosk_id: object::id(kiosk),
             bid: bid.value(),
-            is_personal: personal_kiosk::is_personal(kiosk),
+            order_id,
             item_id,
         });
 
-
         ext::storage_mut(kiosk).add(
-            Bid<T, Market> { item_id },
-            bid
-        )
+            Bid<Market, T> { item_id },
+            PlacedBid { bid: bid.into_balance(), order_id }
+        );
+
+        order_id
     }
 
     /// Accept a single bid for an item with a specified `ID`. For that the
@@ -100,26 +108,29 @@ module mkt::single_bid {
         seller_cap: &KioskOwnerCap,
         policy: &TransferPolicy<T>,
         item_id: ID,
+        bid_order_id: address,
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
         assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
-        assert!(ext::storage(buyer).contains(Bid<T, Market> { item_id }), ENoBid);
+        assert!(ext::storage(buyer).contains(Bid<Market, T> { item_id }), ENoBid);
         assert!(seller.has_item(item_id), EItemNotFound);
         assert!(!seller.is_listed(item_id), EAlreadyListed);
 
-        let coin: Coin<SUI> = ext::storage_mut(buyer)
-            .remove(Bid<T, Market> { item_id });
+        let PlacedBid {
+            bid, order_id
+        } = ext::storage_mut(buyer).remove(Bid<Market, T> { item_id });
 
-        let amount = coin.value();
+        assert!(order_id == bid_order_id, EOrderMismatch);
+
+        let amount = bid.value();
         let mkt_cap = mkt::new(seller, seller_cap, item_id, amount, ctx);
-        let (item, req, mkt_req) = mkt::purchase(seller, mkt_cap, coin, ctx);
+        let (item, req, mkt_req) = mkt::purchase(seller, mkt_cap, coin::from_balance(bid, ctx), ctx);
 
-        event::emit(BidAccepted<T, Market> {
+        event::emit(BidAccepted<Market, T> {
             kiosk_id: object::id(buyer),
             bid: amount,
-            buyer_is_personal: personal_kiosk::is_personal(buyer),
-            seller_is_personal: personal_kiosk::is_personal(seller),
+            order_id,
             item_id,
         });
 
@@ -132,22 +143,23 @@ module mkt::single_bid {
         kiosk: &mut Kiosk,
         kiosk_cap: &KioskOwnerCap,
         item_id: ID,
-        _ctx: &mut TxContext
+        ctx: &mut TxContext
     ): Coin<SUI> {
         assert!(kiosk.has_access(kiosk_cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
-        assert!(ext::storage(kiosk).contains(Bid<T, Market> { item_id }), ENoBid);
+        assert!(ext::storage(kiosk).contains(Bid<Market, T> { item_id }), ENoBid);
 
-        let coin: Coin<SUI> = ext::storage_mut(kiosk)
-            .remove(Bid<T, Market> { item_id });
+        let PlacedBid {
+            order_id, bid,
+        } = ext::storage_mut(kiosk).remove(Bid<Market, T> { item_id });
 
-        event::emit(BidCancelled<T, Market> {
+        event::emit(BidCancelled<Market, T> {
             kiosk_id: object::id(kiosk),
-            bid: coin.value(),
-            is_personal: personal_kiosk::is_personal(kiosk),
+            bid: bid.value(),
+            order_id,
             item_id,
         });
 
-        coin
+        coin::from_balance(bid, ctx)
     }
 }

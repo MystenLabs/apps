@@ -10,9 +10,7 @@
 ///     by the seller and the item is placed in the buyer's (bidder's) Kiosk.
 /// 3. The seller resolves the requests for `Market` and creator.
 module mkt::collection_bidding {
-    use std::option::Option;
     use std::type_name;
-    use std::vector;
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
     use sui::tx_context::TxContext;
     use sui::coin::{Self, Coin};
@@ -24,7 +22,6 @@ module mkt::collection_bidding {
     use sui::object::{Self, ID};
     use sui::event;
     use sui::pay;
-    use sui::bag;
 
     use kiosk::personal_kiosk;
     use mkt::adapter::{Self as mkt, NoMarket};
@@ -44,15 +41,28 @@ module mkt::collection_bidding {
     const EExtensionNotInstalled: u64 = 5;
     /// Trying to accept a bid that doesn't match the seller's expectation.
     const EBidDoesntMatchExpected: u64 = 6;
+    /// The bid is not in the correct order ASC: last one is the most expensive.
+    const EIncorrectOrder: u64 = 7;
+    /// The order_id doesn't match the bid.
+    const EOrderMismatch: u64 = 8;
 
     /// A key for Extension storage - a single bid on an item of type `T` on a `Market`.
     public struct Bid<phantom Market, phantom T> has copy, store, drop {}
+
+    /// A struct that holds the `bids` and the `order_id`.
+    public struct Bids has store {
+        /// A vector of coins that represent the bids.
+        bids: vector<Coin<SUI>>,
+        /// A unique identifier for the bid.
+        order_id: address,
+    }
 
     // === Events ===
 
     /// An event that is emitted when a new bid is placed.
     public struct NewBid<phantom Market, phantom T> has copy, drop {
         kiosk_id: ID,
+        order_id: address,
         bids: vector<u64>,
         is_personal: bool,
     }
@@ -61,16 +71,16 @@ module mkt::collection_bidding {
     public struct BidAccepted<phantom Market, phantom T> has copy, drop {
         seller_kiosk_id: ID,
         buyer_kiosk_id: ID,
+        order_id: address,
         item_id: ID,
         amount: u64,
-        buyer_is_personal: bool,
-        seller_is_personal: bool,
     }
 
     /// An event that is emitted when a bid is canceled.
     public struct BidCanceled<phantom Market, phantom T> has copy, drop {
+        order_id: address,
         kiosk_id: ID,
-        kiosk_owner: Option<address>,
+        kiosk_owner: address,
     }
 
     // === Bidding logic ===
@@ -84,26 +94,32 @@ module mkt::collection_bidding {
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
         bids: vector<Coin<SUI>>,
-        _ctx: &mut TxContext
-    ) {
+        ctx: &mut TxContext
+    ): address {
         assert!(bids.length() > 0, ENoCoinsPassed);
         assert!(kiosk::has_access(kiosk, cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
 
+        let order_id = ctx.fresh_object_address();
         let mut amounts = vector[];
-        let (mut i, count) = (0, vector::length(&bids));
+        let (mut i, count, mut prev) = (0, bids.length(), 0);
         while (i < count) {
-            vector::push_back(&mut amounts, vector::borrow(&bids, i).value());
+            let amount = bids.borrow(i).value();
+            assert!(amount >= prev && amount > 0, EIncorrectOrder);
+            amounts.push_back(bids.borrow(i).value());
+            prev = amount;
             i = i + 1;
         };
 
-        event::emit(NewBid<T, Market> {
-            kiosk_id: object::id(kiosk),
+        event::emit(NewBid<Market, T> {
+            order_id,
             bids: amounts,
+            kiosk_id: object::id(kiosk),
             is_personal: personal_kiosk::is_personal(kiosk)
         });
 
-        bag::add(ext::storage_mut(kiosk), Bid<T, Market> {}, bids);
+        ext::storage_mut(kiosk).add(Bid<Market, T> {}, Bids { bids, order_id });
+        order_id
     }
 
     /// Cancel all bids, return the funds to the owner.
@@ -111,16 +127,19 @@ module mkt::collection_bidding {
         kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext
     ): Coin<SUI> {
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
-        assert!(kiosk::has_access(kiosk, cap), ENotAuthorized);
+        assert!(kiosk.has_access(cap), ENotAuthorized);
 
-        event::emit(BidCanceled<T, Market> {
+        let Bids { bids, order_id } = ext::storage_mut(kiosk)
+            .remove(Bid<Market, T> {});
+
+        event::emit(BidCanceled<Market, T> {
+            order_id,
             kiosk_id: object::id(kiosk),
-            kiosk_owner: personal_kiosk::try_owner(kiosk)
+            kiosk_owner: personal_kiosk::owner(kiosk)
         });
 
-        let coins = ext::storage_mut(kiosk).remove(Bid<T, Market> {});
         let mut total = coin::zero(ctx);
-        pay::join_vec(&mut total, coins);
+        pay::join_vec(&mut total, bids);
         total
     }
 
@@ -146,51 +165,51 @@ module mkt::collection_bidding {
         policy: &TransferPolicy<T>,
         item_id: ID,
         // for race conditions protection
+        bid_order_id: address,
         min_bid_amount: u64,
         // keeping these arguments for extendability
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
         assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
-        assert!(kiosk::has_access(seller, seller_cap), ENotAuthorized);
+        assert!(ext::is_enabled(buyer), EExtensionDisabled);
+        assert!(seller.has_access(seller_cap), ENotAuthorized);
+        assert!(type_name::get<Market>() != type_name::get<NoMarket>(), EIncorrectMarketArg);
 
         let storage = ext::storage_mut(buyer);
-        assert!(storage.contains(Bid<T, Market> {}), EBidNotFound);
+        assert!(storage.contains(Bid<Market, T> {}), EBidNotFound);
 
         // Take 1 Coin from the bag - this is our bid (bids can't be empty, we
         // make sure of it).
-        let bid: Coin<SUI> = vector::pop_back(bag::borrow_mut(storage, Bid<T, Market> {}));
+        let Bids { bids, order_id } = storage.borrow_mut(Bid<Market, T> {});
+        let order_id = *order_id;
+        let bid = bids.pop_back();
+        let left = bids.length();
 
+        assert!(order_id == &bid_order_id, EOrderMismatch);
         assert!(bid.value() >= min_bid_amount, EBidDoesntMatchExpected);
 
         // If there are no bids left, remove the bag and the key from the storage.
-        if (bid_count<T, Market>(buyer) == 0) {
-            vector::destroy_empty<Coin<SUI>>(
-                ext::storage_mut(buyer).remove(Bid<T, Market> {})
-            );
+        if (left == 0) {
+            let Bids { order_id: _, bids } = storage.remove(Bid<Market, T> {});
+            bids.destroy_empty();
         };
 
         let amount = bid.value();
 
-        assert!(ext::is_enabled(buyer), EExtensionDisabled);
         // assert!(mkt::kiosk(&mkt_cap) == object::id(seller), EIncorrectKiosk);
         // assert!(mkt::min_price(&mkt_cap) <= amount, EBidDoesntMatchExpectation);
-        assert!(type_name::get<Market>() != type_name::get<NoMarket>(), EIncorrectMarketArg);
-
-        let mkt_cap = mkt::new(
-            seller, seller_cap, item_id, amount, ctx
-        );
 
         // Perform the purchase operation in the seller's Kiosk using the `Bid`.
+        let mkt_cap = mkt::new(seller, seller_cap, item_id, amount, ctx);
         let (item, request, market_request) = mkt::purchase(seller, mkt_cap, bid, ctx);
 
-        event::emit(BidAccepted<T, Market> {
+        event::emit(BidAccepted<Market, T> {
             amount,
+            order_id,
             item_id: object::id(&item),
             buyer_kiosk_id: object::id(buyer),
             seller_kiosk_id: object::id(seller),
-            buyer_is_personal: personal_kiosk::is_personal(buyer),
-            seller_is_personal: personal_kiosk::is_personal(seller)
         });
 
         // Place or lock the item in the `source` Kiosk.
@@ -202,17 +221,10 @@ module mkt::collection_bidding {
     // === Getters ===
 
     /// Number of bids on an item of type `T` on a `Market` in a `Kiosk`.
-    public fun bid_count<T: key + store, Market>(kiosk: &Kiosk): u64 {
-        let coins: &vector<Coin<SUI>> = ext::storage(kiosk)
-            .borrow(Bid<T, Market> {});
+    public fun bid_count<Market, T: key + store>(kiosk: &Kiosk): u64 {
+        let Bids { bids, order_id: _ } = ext::storage(kiosk)
+            .borrow(Bid<Market, T> {});
 
-        coins.length()
-    }
-
-    /// Returns the amount of the bid on an item of type `T` on a `Market`.
-    /// The `NoMarket` generic can be used to check an item listed off the market.
-    public fun bid_amount<T: key + store, Market>(kiosk: &Kiosk): u64 {
-        let coins: &vector<Coin<SUI>> = ext::storage(kiosk).borrow(Bid<T, Market> {});
-        coins.borrow(0).value()
+        bids.length()
     }
 }

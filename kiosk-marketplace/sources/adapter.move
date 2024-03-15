@@ -35,31 +35,31 @@ module mkt::adapter {
 
     /// The `MarketPurchaseCap` wraps the `PurchaseCap` and forces the unlocking
     /// party to satisfy the `TransferPolicy<Market>` requirements.
-    public struct MarketPurchaseCap<phantom T: key + store, phantom Market> has store {
+    public struct MarketPurchaseCap<phantom Market, phantom T: key + store> has store {
         purchase_cap: PurchaseCap<T>
     }
 
     /// Create a new `PurchaseCap` and wrap it into the `MarketPurchaseCap`.
-    public(friend) fun new<T: key + store, Market>(
+    public(friend) fun new<Market, T: key + store>(
         kiosk: &mut Kiosk,
         cap: &KioskOwnerCap,
         item_id: ID,
         min_price: u64,
         ctx: &mut TxContext
-    ): MarketPurchaseCap<T, Market> {
+    ): MarketPurchaseCap<Market, T> {
         let purchase_cap = kiosk.list_with_purchase_cap(
             cap, item_id, min_price, ctx
         );
 
-        MarketPurchaseCap<T, Market> { purchase_cap }
+        MarketPurchaseCap<Market, T> { purchase_cap }
     }
 
     /// Return the `MarketPurchaseCap` to the `Kiosk`. Similar to how the
     /// `PurchaseCap` can be returned at any moment. But it can't be unwrapped
     /// into the `PurchaseCap` because that would allow cheating on a `Market`.
-    public(friend) fun return_cap<T: key  + store, Market>(
+    public(friend) fun return_cap<Market, T: key  + store>(
         kiosk: &mut Kiosk,
-        cap: MarketPurchaseCap<T, Market>,
+        cap: MarketPurchaseCap<Market, T>,
         _ctx: &mut TxContext
     ) {
         let MarketPurchaseCap { purchase_cap } = cap;
@@ -69,9 +69,9 @@ module mkt::adapter {
     /// Use the `MarketPurchaseCap` to purchase an item from the `Kiosk`. Unlike
     /// the default flow, this function adds a `TransferRequest<Market>` which
     /// forces the unlocking party to satisfy the `TransferPolicy<Market>`
-    public(friend) fun purchase<T: key + store, Market>(
+    public(friend) fun purchase<Market, T: key + store>(
         kiosk: &mut Kiosk,
-        cap: MarketPurchaseCap<T, Market>,
+        cap: MarketPurchaseCap<Market, T>,
         coin: Coin<SUI>,
         _ctx: &mut TxContext
     ): (T, TransferRequest<T>, TransferRequest<Market>) {
@@ -90,7 +90,7 @@ module mkt::adapter {
     /// the `Market` type parameter and returns only a `TransferRequest<T>`.
     public(friend) fun purchase_no_market<T: key + store>(
         kiosk: &mut Kiosk,
-        cap: MarketPurchaseCap<T, NoMarket>,
+        cap: MarketPurchaseCap<NoMarket, T>,
         coin: Coin<SUI>,
         _ctx: &mut TxContext
     ): (T, TransferRequest<T>) {
@@ -101,17 +101,17 @@ module mkt::adapter {
     // === Getters ===
 
     /// Handy wrapper to read the `kiosk` field of the inner `PurchaseCap`
-    public(friend) fun kiosk<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): ID {
+    public(friend) fun kiosk<Market, T: key + store>(self: &MarketPurchaseCap<Market, T>): ID {
         self.purchase_cap.purchase_cap_kiosk()
     }
 
     /// Handy wrapper to read the `item` field of the inner `PurchaseCap`
-    public(friend) fun item<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): ID {
+    public(friend) fun item<Market, T: key + store>(self: &MarketPurchaseCap<Market, T>): ID {
         self.purchase_cap.purchase_cap_item()
     }
 
     /// Handy wrapper to read the `min_price` field of the inner `PurchaseCap`
-    public(friend) fun min_price<T: key + store, Market>(self: &MarketPurchaseCap<T, Market>): u64 {
+    public(friend) fun min_price<Market, T: key + store>(self: &MarketPurchaseCap<Market, T>): u64 {
         self.purchase_cap.purchase_cap_min_price()
     }
 

@@ -29,13 +29,13 @@ module mkt::adapter_tests {
 
         kiosk::place(&mut kiosk, &kiosk_cap, asset);
 
-        let mkt_cap = mkt::new<Asset, MyMarket>(
+        let mkt_cap = mkt::new<MyMarket, Asset>(
             &mut kiosk, &kiosk_cap, asset_id, 100000, ctx
         );
 
-        assert!(mkt::item(&mkt_cap) == asset_id, 0);
-        assert!(mkt::min_price(&mkt_cap) == 100000, 1);
-        assert!(mkt::kiosk(&mkt_cap) == object::id(&kiosk), 2);
+        assert!(mkt_cap.item() == asset_id, 0);
+        assert!(mkt_cap.min_price() == 100000, 1);
+        assert!(mkt_cap.kiosk() == object::id(&kiosk), 2);
 
         mkt::return_cap(&mut kiosk, mkt_cap, ctx);
 
@@ -55,13 +55,13 @@ module mkt::adapter_tests {
         kiosk.place(&kiosk_cap, asset);
 
         // Lock an item in the Marketplace
-        let mkt_cap = mkt::new<Asset, MyMarket>(
+        let mkt_cap = mkt::new<MyMarket, Asset>(
             &mut kiosk, &kiosk_cap, asset_id, 100000, ctx
         );
 
         // Mint a Coin and make a purchase
         let coin = coin::mint_for_testing<SUI>(100000, ctx);
-        let (item, req, mkt_req) = mkt::purchase<Asset, MyMarket>(
+        let (item, req, mkt_req) = mkt::purchase<MyMarket, Asset>(
             &mut kiosk, mkt_cap, coin, ctx
         );
 

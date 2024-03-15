@@ -4,12 +4,10 @@
 #[test_only]
 /// Tests for the marketplace `marketplace_trading_ext`.
 module mkt::fixed_trading_tests {
-    use sui::object::ID;
-    use sui::kiosk_extension;
-    use sui::tx_context::TxContext;
-    use sui::transfer_policy as policy;
-    use sui::kiosk::{Kiosk, KioskOwnerCap};
-    use sui::kiosk_test_utils::{Self as test, Asset};
+    use sui::test_utils::destroy;
+    use sui::kiosk_test_utils::Asset;
+
+    use mkt::test_utils as test;
     use mkt::fixed_trading as ext;
 
     const PRICE: u64 = 100_000;
@@ -18,63 +16,50 @@ module mkt::fixed_trading_tests {
     public struct MyMarket has drop {}
 
     #[test] fun test_list_and_delist() {
-        let ctx = &mut test::ctx();
-        let (mut kiosk, kiosk_cap, asset_id) = prepare(ctx);
+        let mut test = test::new();
+        let ctx = &mut test.next_tx(@0x1);
+        let (mut kiosk, cap, asset_id) = test.kiosk(ctx);
 
-        ext::list<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, PRICE, ctx);
+        let _order_id = ext::list<MyMarket, Asset>(&mut kiosk, cap.borrow(), asset_id, PRICE, ctx);
 
-        assert!(ext::is_listed<Asset, MyMarket>(&kiosk, asset_id), 0);
-        assert!(ext::price<Asset, MyMarket>(&kiosk, asset_id) == PRICE, 1);
+        assert!(ext::is_listed<MyMarket, Asset>(&kiosk, asset_id), 0);
+        assert!(ext::price<MyMarket, Asset>(&kiosk, asset_id) == PRICE, 1);
 
-        ext::delist<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, ctx);
+        ext::delist<MyMarket, Asset>(&mut kiosk, cap.borrow(), asset_id, ctx);
 
-        let asset = kiosk.take(&kiosk_cap, asset_id);
-        test::return_assets(vector[ asset ]);
-        wrapup(kiosk, kiosk_cap, ctx);
+        let asset: Asset = kiosk.take(cap.borrow(), asset_id);
+
+        destroy(kiosk);
+        destroy(asset);
+        destroy(cap);
     }
 
     #[test] fun test_list_and_purchase() {
-        let ctx = &mut test::ctx();
-        let (mut kiosk, kiosk_cap, asset_id) = prepare(ctx);
+        let mut test = test::new();
+        let ctx = &mut test.next_tx(@0x1);
+        let (mut kiosk, cap, asset_id) = test.kiosk(ctx);
 
-        ext::list<Asset, MyMarket>(&mut kiosk, &kiosk_cap, asset_id, PRICE, ctx);
+        let order_id = ext::list<MyMarket, Asset>(
+            &mut kiosk, cap.borrow(), asset_id, PRICE, ctx
+        );
 
-        let coin = test::get_sui(PRICE, ctx);
-        let (item, req, mkt_req) = ext::purchase<Asset, MyMarket>(
-            &mut kiosk, asset_id, coin, ctx
+        let coin = test.mint_sui(PRICE, ctx);
+        let (item, req, mkt_req) = ext::purchase<MyMarket, Asset>(
+            &mut kiosk, asset_id, order_id, coin, ctx
         );
 
         // Resolve creator's Policy
-        let (policy, policy_cap) = test::get_policy(ctx);
+        let policy = test.policy<Asset>(ctx);
         policy.confirm_request(req);
-        test::return_policy(policy, policy_cap, ctx);
+        test.destroy(policy);
 
         // Resolve marketplace's Policy
-        let (policy, policy_cap) = policy::new_for_testing<MyMarket>(ctx);
+        let policy = test.policy<MyMarket>(ctx);
         policy.confirm_request(mkt_req);
-        policy.destroy_and_withdraw(policy_cap, ctx)
-            .destroy_zero();
+        test.destroy(policy);
 
-        // Deal with the Asset + Kiosk, KioskOwnerCap
-        test::return_assets(vector[ item ]);
-        wrapup(kiosk, kiosk_cap, ctx);
-    }
-
-    /// Prepare a Kiosk with:
-    /// - extension installed
-    /// - an asset inside
-    fun prepare(ctx: &mut TxContext): (Kiosk, KioskOwnerCap, ID) {
-        let (mut kiosk, kiosk_cap) = test::get_kiosk(ctx);
-        let (asset, asset_id) = test::get_asset(ctx);
-
-        kiosk.place(&kiosk_cap, asset);
-        mkt::extension::add(&mut kiosk, &kiosk_cap, ctx);
-        (kiosk, kiosk_cap, asset_id)
-    }
-
-    /// Wrap everything up; remove the extension and the asset.
-    fun wrapup(mut kiosk: Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
-        kiosk_extension::remove<mkt::extension::Extension>(&mut kiosk, &cap);
-        test::return_kiosk(kiosk, cap, ctx);
+        test.destroy(kiosk)
+            .destroy(item)
+            .destroy(cap);
     }
 }
