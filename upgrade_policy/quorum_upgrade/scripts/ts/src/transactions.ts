@@ -1,6 +1,6 @@
 
+import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { getUpgradeDigest, getActiveAddress, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
-import { TransactionArgument, TransactionBlock } from '@mysten/sui.js/transactions';
 
 // =================================================================
 // Constants to update when running the different transactions
@@ -84,7 +84,7 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
     
     if (metadata.size > 0) {
         txb.moveCall({
-            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::add_all_metadata`,
+            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::add_upgrade_metadata`,
             arguments: [
                 txb.object(proposedUpgrade),
                 prepareMetadataVecMap(txb, metadata)
@@ -152,7 +152,10 @@ const executeTransaction = async () => {
     // 1- define a 2 out of 3 quorum upgrade policy
     newQuorumUpgradeCap(txb, 2, [VOTER_1, VOTER_2, VOTER_3], TEST_PACKAGE_UPGRADE_CAP_ID, getActiveAddress());
 
-    // 2- propose an upgrade. Digest is determined automatically via the package path
+    // 2a- propose an upgrade. Digest is determined automatically via the package path
+    proposeUpgrade(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE);
+
+    // 2b- propose an upgrade with metadata. Digest is determined automatically via the package path, can include optional metadata
     proposeUpgradeV2(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE, UPGRADE_METADATA);
     
     // 3- vote for an upgrade
