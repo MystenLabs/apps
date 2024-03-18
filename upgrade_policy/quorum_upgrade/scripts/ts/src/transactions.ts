@@ -1,5 +1,5 @@
 
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { getUpgradeDigest, getActiveAddress, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
 
 // =================================================================
@@ -11,7 +11,7 @@ const VOTER_1 = '';
 const VOTER_2 = '';
 const VOTER_3 = '';
 // The package id of the `quorum_upgrade_policy` package (published on mainnet)
-const QUORUM_UPGRADE_PACKAGE_ID = ``;
+const QUORUM_UPGRADE_PACKAGE_ID = `0xae627358027f3b53865d2403ecf5573c91d543a387d653764b650b8f85a2235c`;
 // Optional upgrade metadata info to be included with upgrade
 const UPGRADE_METADATA: Map<string, Uint8Array> = new Map();
 // The upgrade cap of the quorum upgrade policy (resulting from `quorum_upgrade_policy::new`)

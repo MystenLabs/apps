@@ -263,7 +263,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// V2 of propose_upgrade, returns ProposedUpgrade object which can be used
-    /// in add_metadata function to optionally add metadata.
+    /// in add_upgrade_metadata function to optionally add metadata.
     /// Must be used to call share_upgrade_object to share proposal with voters.
     public fun propose_upgrade_v2(
         cap: &QuorumUpgradeCap,
