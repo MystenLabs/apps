@@ -195,6 +195,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     const EInvalidProposalForUpgrade: u64 = 7;
     /// Invalid address for adding metadata
     const EInvalidProposerForMetadata: u64 = 8;
+    /// Metadata already exists for the proposal
+    const EMetadataAlreadyExists: u64 = 9;
 
     /// Create a `QuorumUpgradeCap` given an `UpgradeCap`.
     /// The returned instance is the only and exclusive controller of upgrades. 
@@ -299,45 +301,22 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         }
     }
 
-    public fun add_all_metadata(
+    public fun add_upgrade_metadata(
         upgrade: &mut ProposedUpgrade,
         metadata_map: VecMap<string::String, vector<u8>>,
         ctx: &mut TxContext,
     ) {
         assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
-        if (!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&upgrade.id, UpgradeMetadata {})) {
-            df::add(&mut upgrade.id, UpgradeMetadata {}, vec_map::empty<string::String, vector<u8>>());
-        };
-
-        let keys = vec_map::keys(&metadata_map);
-        let len = vector::length(&keys);
-        let i = 0;
-        while (i < len) {
-            let key = vector::borrow(&keys, i);
-            let value = vec_map::get(&metadata_map, key);
-            add_metadata(upgrade, *key, *value);
-            i = i + 1;
-        }
-    }
-
-    /// Add metadata to ProposedUpgrade object in v2
-    fun add_metadata(
-        upgrade: &mut ProposedUpgrade,
-        key: string::String,
-        metadata: vector<u8>,
-    ) {
-        let vec_map: &mut VecMap<string::String, vector<u8>> = df::borrow_mut<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut upgrade.id, UpgradeMetadata {});
-        if (vec_map::contains(vec_map, &key)) {
-            vec_map::remove(vec_map, &key);
-        };
-        vec_map::insert(vec_map, key, metadata);
+        assert!(!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&upgrade.id, UpgradeMetadata {}), EMetadataAlreadyExists);
+        df::add(&mut upgrade.id, UpgradeMetadata {}, metadata_map);
     }
 
     /// retrieve metadata from ProposedUpgrade object in v2
     public fun get_metadata(
         proposal: &ProposedUpgrade,
-    ): &VecMap<string::String, vector<u8>> {
-        df::borrow<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&proposal.id, UpgradeMetadata {})
+    ): VecMap<string::String, vector<u8>> {
+        let vec_map_ref = df::borrow<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&proposal.id, UpgradeMetadata {});
+        *vec_map_ref
     }
 
     /// Share the upgrade object created by propose_upgrade_v2
