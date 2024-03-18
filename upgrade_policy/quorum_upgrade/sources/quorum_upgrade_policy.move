@@ -64,7 +64,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     use sui::tx_context::{Self, TxContext};
     use sui::vec_set::{Self, VecSet};
     use sui::dynamic_field::{Self as df};
-    use sui::vec_map::{Self, VecMap};
+    use sui::vec_map::{VecMap};
     use std::string;
 
     /// The capability controlling the upgrade. 
