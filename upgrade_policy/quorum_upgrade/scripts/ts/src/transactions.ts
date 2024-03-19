@@ -84,7 +84,7 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
     
     if (metadata) {
         txb.moveCall({
-            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::add_metadata`,
+            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::metadata`,
             arguments: [
                 txb.object(proposedUpgrade),
                 prepareMetadataVecMap(txb, metadata)
