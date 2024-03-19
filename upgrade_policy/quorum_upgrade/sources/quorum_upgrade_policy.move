@@ -312,7 +312,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// retrieve metadata from ProposedUpgrade object in v2
-    public fun get_metadata(
+    public fun metadata(
         proposal: &ProposedUpgrade,
     ): VecMap<string::String, vector<u8>> {
         let vec_map_ref = df::borrow<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&proposal.id, UpgradeMetadata {});
@@ -360,6 +360,46 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         proposal: &mut ProposedUpgrade, 
         ctx: &TxContext,
     ): UpgradeTicket {
+        authorize(cap, proposal, ctx);
+        let policy = package::upgrade_policy(&cap.upgrade_cap);
+        package::authorize_upgrade(
+            &mut cap.upgrade_cap,
+            policy,
+            proposal.digest,
+        )
+    }
+
+    public fun authorize_upgrade_v2(
+        cap: &mut QuorumUpgradeCap,
+        proposal_obj: ProposedUpgrade, 
+        ctx: &TxContext,
+    ): UpgradeTicket {
+        let proposal = &mut proposal_obj;
+        authorize(cap, proposal, ctx);
+
+        let ProposedUpgrade {
+            id,
+            upgrade_cap: _,
+            proposer: _,
+            digest,
+            current_voters: _,
+        } = proposal_obj;
+
+        let policy = package::upgrade_policy(&cap.upgrade_cap);
+        let upgrade_ticket = package::authorize_upgrade(
+            &mut cap.upgrade_cap,
+            policy,
+            digest,
+        );
+        object::delete(id);
+        upgrade_ticket
+    }
+
+    fun authorize(
+        cap: &mut QuorumUpgradeCap,
+        proposal: &mut ProposedUpgrade, 
+        ctx: &TxContext,
+    ) {
         assert!(proposal.upgrade_cap == object::id(cap), EInvalidProposalForUpgrade);
         assert!(
             vec_set::size(&proposal.current_voters) >= cap.required_votes, 
@@ -380,13 +420,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         });
 
         df::remove_if_exists<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut proposal.id, UpgradeMetadata {});
-
-        let policy = package::upgrade_policy(&cap.upgrade_cap);
-        package::authorize_upgrade(
-            &mut cap.upgrade_cap,
-            policy,
-            proposal.digest,
-        )
     }
 
     /// Finalize the upgrade to produce the given receipt.
