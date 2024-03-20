@@ -7,7 +7,7 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui.js/client';
 // Constants to update when running the different transactions
 // =================================================================
 
-const client = new SuiClient({ url: getFullnodeUrl('testnet') });
+const client = new SuiClient({ url: getFullnodeUrl('mainnet') });
 
 // Voters. Add all addresses that will be part of the quorum policy.
 const VOTER_1 = '';
