@@ -34,7 +34,8 @@ and that object id has to be defined in `transaction.ts::QUORUM_UPGRADE_CAP_ID`
 to point to that. Please refer to https://docs.sui.io/concepts/sui-move-concepts/packages/upgrade 
 for details on the upgrade logic and steps. `proposeUpgrade` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1. 
 That will generate a shared `ProposedUpgrade` object whose id can be used to vote.
-3. `vote` must be called from at least `k` out of the `n` voters providing `QUORUM_UPGRADE_CAP_ID` and `VOTING_CAP_ID` of the signer. 
+3a. before voting, `getMetadata` can be called to see optional metadata included with the proposed upgrade.
+3b. `vote` must be called from at least `k` out of the `n` voters providing `QUORUM_UPGRADE_CAP_ID` and `VOTING_CAP_ID` of the signer. 
 4. Once the quorum is reached `authorizeUpgrade` can be executed to commit the transaction.
 
 When voting, each voter should have received the source code in a compilable form (with `toml` and in the proper directory structure) so they 
