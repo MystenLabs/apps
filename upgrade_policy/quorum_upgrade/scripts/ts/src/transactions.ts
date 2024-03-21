@@ -7,7 +7,8 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui.js/client';
 // Constants to update when running the different transactions
 // =================================================================
 
-const client = new SuiClient({ url: getFullnodeUrl('mainnet') });
+const ENV = 'mainnet';
+const client = new SuiClient({ url: getFullnodeUrl(ENV) });
 
 // Voters. Add all addresses that will be part of the quorum policy.
 const VOTER_1 = '';
@@ -87,7 +88,7 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
     
     if (metadata) {
         txb.moveCall({
-            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::metadata`,
+            target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::add_metadata`,
             arguments: [
                 txb.object(proposedUpgrade),
                 prepareMetadataVecMap(txb, metadata)
@@ -104,27 +105,34 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
 }
 
 /// Use the `ProposedUpgrade` object id to get the optional metadata
-const getMetadata = async (proposedUpgradeObjectId:string) => {
+const getMetadata = async (proposedUpgradeObjectId: string) => {
     try {
-      const result = await client.call<{ data: [{objectId: string}] }>('suix_getDynamicFields', [proposedUpgradeObjectId]);
+        const result = await client.call<{ data: [{objectId: string}] }>('suix_getDynamicFields', [proposedUpgradeObjectId]);
 
-      // Assuming the result structure correctly, extract the dynamic field ID
-      const dynamicFieldId = result.data[0].objectId;
-      
-      // Fetch the content associated with the dynamic field ID
-      const content = await client.call('sui_getObject', [
-          dynamicFieldId,
-          {
-              "showContent": true,
-          }
-      ]);
-      
-      return content;
+        // Assuming the result structure correctly, extract the dynamic field ID
+        const dynamicFieldId = result.data[0].objectId;
+        
+        // Fetch the content associated with the dynamic field ID
+        const output = await client.call<{data: any}>('sui_getObject', [dynamicFieldId,{"showContent": true,}]);
+
+        const arr = output.data.content.fields.value.fields.contents;
+        const resultMap = new Map<string, Uint8Array>(
+            arr.map((entry: { fields: { key: string, value: Uint8Array } }) => [entry.fields.key, entry.fields.value])
+        );
+        return resultMap;
     } catch (error) {
-      console.error("Error fetching metadata:", error);
-      throw error;
+        console.error("Error fetching metadata:", error);
+        throw error;
     }
-  }
+}
+
+
+/// check the optional metadata for a proposed upgrade, returns a key value map
+const checkMetadata = async (proposedUpgradeObjectId: string) => {
+    const content = await getMetadata(PROPOSED_UPGRADE_ID);
+    console.log(content)
+    // Do something with the metadata
+}
 
 /// Vote for a particular `ProposedUpgrade` shared object.
 /// Use the `ProposedUpgrade` object id defined by the transaction above and the
@@ -183,19 +191,17 @@ const executeTransaction = async () => {
     // 2b- propose an upgrade with metadata. Digest is determined automatically via the package path, can include optional metadata
     proposeUpgradeV2(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE, UPGRADE_METADATA);
     
-    // 3a- get the optional metadata for a proposed upgrade
-    const content = await getMetadata(PROPOSED_UPGRADE_ID);
-
-    // 3b- vote for an upgrade
+    // 3- vote for an upgrade
     vote(txb, PROPOSED_UPGRADE_ID, VOTING_CAP_ID);
 
     // 4- authorize/commit the upgrade
     authorizeUpgrade(txb, TEST_PACKAGE_ID, PROPOSED_UPGRADE_ID, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE);
 
     // Run against mainnet
-    const res = await signAndExecute(txb, 'mainnet');
+    const res = await signAndExecute(txb, ENV);
 
     console.dir(res, { depth: null });
 }
 
+// checkMetadata(PROPOSED_UPGRADE_ID);
 executeTransaction();
