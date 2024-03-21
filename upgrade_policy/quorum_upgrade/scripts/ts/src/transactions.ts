@@ -121,15 +121,14 @@ const getMetadata = async (proposedUpgradeObjectId: string) => {
         );
         return resultMap;
     } catch (error) {
-        console.error("Error fetching metadata:", error);
+        console.error("Error fetching metadata: no metadata returned in dynamic field",);
         throw error;
     }
 }
 
-
 /// check the optional metadata for a proposed upgrade, returns a key value map
 const checkMetadata = async (proposedUpgradeObjectId: string) => {
-    const content = await getMetadata(PROPOSED_UPGRADE_ID);
+    const content = await getMetadata(proposedUpgradeObjectId);
     console.log(content)
     // Do something with the metadata
 }
