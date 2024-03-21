@@ -8,7 +8,7 @@ import { getFullnodeUrl, SuiClient } from '@mysten/sui.js/client';
 // =================================================================
 
 const ENV = 'mainnet';
-const client = new SuiClient({ url: getFullnodeUrl(ENV) });
+const SUICLIENT = new SuiClient({ url: getFullnodeUrl(ENV) });
 
 // Voters. Add all addresses that will be part of the quorum policy.
 const VOTER_1 = '';
@@ -107,13 +107,13 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
 /// Use the `ProposedUpgrade` object id to get the optional metadata
 const getMetadata = async (proposedUpgradeObjectId: string) => {
     try {
-        const result = await client.call<{ data: [{objectId: string}] }>('suix_getDynamicFields', [proposedUpgradeObjectId]);
+        const result = await SUICLIENT.call<{ data: [{objectId: string}] }>('suix_getDynamicFields', [proposedUpgradeObjectId]);
 
         // Assuming the result structure correctly, extract the dynamic field ID
         const dynamicFieldId = result.data[0].objectId;
         
         // Fetch the content associated with the dynamic field ID
-        const output = await client.call<{data: any}>('sui_getObject', [dynamicFieldId,{"showContent": true,}]);
+        const output = await SUICLIENT.call<{data: any}>('sui_getObject', [dynamicFieldId,{"showContent": true,}]);
 
         const arr = output.data.content.fields.value.fields.contents;
         const resultMap = new Map<string, Uint8Array>(
