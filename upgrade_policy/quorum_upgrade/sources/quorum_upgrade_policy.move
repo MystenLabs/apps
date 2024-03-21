@@ -396,7 +396,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     fun authorize(
-        cap: &mut QuorumUpgradeCap,
+        cap: &QuorumUpgradeCap,
         proposal: &mut ProposedUpgrade, 
         ctx: &TxContext,
     ) {
