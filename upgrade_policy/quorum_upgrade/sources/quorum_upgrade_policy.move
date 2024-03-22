@@ -273,34 +273,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         internal_propose_upgrade(cap, digest, ctx)
     }
 
-    fun internal_propose_upgrade(
-        cap: &QuorumUpgradeCap,
-        digest: vector<u8>,
-        ctx: &mut TxContext,
-    ): ProposedUpgrade {
-        let cap_id = object::id(cap);
-        let proposal_uid = object::new(ctx);
-        let proposal_id = object::uid_to_inner(&proposal_uid);
-        
-        let proposer = tx_context::sender(ctx);
-        
-        event::emit(UpgradeProposed {
-            upgrade_cap: cap_id,
-            proposal: proposal_id,
-            digest,
-            proposer,
-            voters: cap.voters,
-        });
-
-        ProposedUpgrade {
-            id: proposal_uid,
-            upgrade_cap: cap_id,
-            proposer,
-            digest,
-            current_voters: vec_set::empty(),
-        }
-    }
-
     public fun add_metadata(
         upgrade: &mut ProposedUpgrade,
         metadata_map: VecMap<string::String, vector<u8>>,
@@ -309,14 +281,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
         assert!(!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&upgrade.id, UpgradeMetadata {}), EMetadataAlreadyExists);
         df::add(&mut upgrade.id, UpgradeMetadata {}, metadata_map);
-    }
-
-    /// retrieve metadata from ProposedUpgrade object in v2
-    public fun metadata(
-        proposal: &ProposedUpgrade,
-    ): VecMap<string::String, vector<u8>> {
-        let vec_map_ref = df::borrow<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&proposal.id, UpgradeMetadata {});
-        *vec_map_ref
     }
 
     /// Share the upgrade object created by propose_upgrade_v2
@@ -360,13 +324,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         proposal: &mut ProposedUpgrade, 
         ctx: &TxContext,
     ): UpgradeTicket {
-        authorize(cap, proposal, ctx);
-        let policy = package::upgrade_policy(&cap.upgrade_cap);
-        package::authorize_upgrade(
-            &mut cap.upgrade_cap,
-            policy,
-            proposal.digest,
-        )
+        authorize(cap, proposal, ctx)
     }
 
     public fun authorize_upgrade_v2(
@@ -374,52 +332,17 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         proposal_obj: ProposedUpgrade, 
         ctx: &TxContext,
     ): UpgradeTicket {
-        let proposal = &mut proposal_obj;
-        authorize(cap, proposal, ctx);
+        let upgrade_ticket = authorize(cap, &mut proposal_obj, ctx);
 
         let ProposedUpgrade {
             id,
             upgrade_cap: _,
             proposer: _,
-            digest,
+            digest: _,
             current_voters: _,
         } = proposal_obj;
-
-        let policy = package::upgrade_policy(&cap.upgrade_cap);
-        let upgrade_ticket = package::authorize_upgrade(
-            &mut cap.upgrade_cap,
-            policy,
-            digest,
-        );
         object::delete(id);
         upgrade_ticket
-    }
-
-    fun authorize(
-        cap: &QuorumUpgradeCap,
-        proposal: &mut ProposedUpgrade, 
-        ctx: &TxContext,
-    ) {
-        assert!(proposal.upgrade_cap == object::id(cap), EInvalidProposalForUpgrade);
-        assert!(
-            vec_set::size(&proposal.current_voters) >= cap.required_votes, 
-            ENotEnoughVotes,
-        );
-        assert!(proposal.proposer != @0x0, EAlreadyIssued);
-
-        // assert the signer is the proposer and the upgrade has not happened yet
-        let signer = tx_context::sender(ctx);
-        assert!(proposal.proposer == signer, ESignerMismatch);
-        proposal.proposer = @0x0;
-
-        event::emit(UpgradePerformed {
-            upgrade_cap: proposal.upgrade_cap,
-            proposal: object::id(proposal),
-            digest: proposal.digest,
-            proposer: signer,
-        });
-
-        df::remove_if_exists<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut proposal.id, UpgradeMetadata {});
     }
 
     /// Finalize the upgrade to produce the given receipt.
@@ -489,6 +412,76 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// Get the current accepted votes for the given proposal.
     public fun current_voters(proposal: &ProposedUpgrade): &VecSet<ID> {
         &proposal.current_voters
+    }
+
+    /// retrieve metadata from ProposedUpgrade object in v2
+    public fun metadata(
+        proposal: &ProposedUpgrade,
+    ): VecMap<string::String, vector<u8>> {
+        *df::borrow(&proposal.id, UpgradeMetadata {})
+    }
+
+    /// propose upgrade helper function
+    fun internal_propose_upgrade(
+        cap: &QuorumUpgradeCap,
+        digest: vector<u8>,
+        ctx: &mut TxContext,
+    ): ProposedUpgrade {
+        let cap_id = object::id(cap);
+        let proposal_uid = object::new(ctx);
+        let proposal_id = object::uid_to_inner(&proposal_uid);
+        
+        let proposer = tx_context::sender(ctx);
+        
+        event::emit(UpgradeProposed {
+            upgrade_cap: cap_id,
+            proposal: proposal_id,
+            digest,
+            proposer,
+            voters: cap.voters,
+        });
+
+        ProposedUpgrade {
+            id: proposal_uid,
+            upgrade_cap: cap_id,
+            proposer,
+            digest,
+            current_voters: vec_set::empty(),
+        }
+    }
+
+    /// authorize upgrade helper function
+    fun authorize(
+        cap: &mut QuorumUpgradeCap,
+        proposal: &mut ProposedUpgrade, 
+        ctx: &TxContext,
+    ): UpgradeTicket {
+        assert!(proposal.upgrade_cap == object::id(cap), EInvalidProposalForUpgrade);
+        assert!(
+            vec_set::size(&proposal.current_voters) >= cap.required_votes, 
+            ENotEnoughVotes,
+        );
+        assert!(proposal.proposer != @0x0, EAlreadyIssued);
+
+        // assert the signer is the proposer and the upgrade has not happened yet
+        let signer = tx_context::sender(ctx);
+        assert!(proposal.proposer == signer, ESignerMismatch);
+        proposal.proposer = @0x0;
+
+        event::emit(UpgradePerformed {
+            upgrade_cap: proposal.upgrade_cap,
+            proposal: object::id(proposal),
+            digest: proposal.digest,
+            proposer: signer,
+        });
+
+        df::remove_if_exists<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut proposal.id, UpgradeMetadata {});
+        let policy = package::upgrade_policy(&cap.upgrade_cap);
+        package::authorize_upgrade(
+            &mut cap.upgrade_cap,
+            policy,
+            proposal.digest,
+        )
     }
 
     #[test_only]
