@@ -107,19 +107,19 @@ const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, pac
 /// Use the `ProposedUpgrade` object id to get the optional metadata
 const getMetadata = async (proposedUpgradeObjectId: string) => {
     try {
-        const result = await SUICLIENT.call<{ data: [{objectId: string}] }>('suix_getDynamicFields', [proposedUpgradeObjectId]);
-
-        // Assuming the result structure correctly, extract the dynamic field ID
-        const dynamicFieldId = result.data[0].objectId;
+        const result = await SUICLIENT.getDynamicFields({
+            parentId: proposedUpgradeObjectId
+        })
         
-        // Fetch the content associated with the dynamic field ID
-        const output = await SUICLIENT.call<{data: any}>('sui_getObject', [dynamicFieldId,{"showContent": true,}]);
-
-        const arr = output.data.content.fields.value.fields.contents;
-        const resultMap = new Map<string, Uint8Array>(
+        // // Fetch the content associated with the dynamic field ID
+        const output = await SUICLIENT.getObject({
+            id: result.data[0].objectId, // dynamic field ID
+            options: {showContent: true}
+        });
+        const arr = (output as any).data.content.fields.value.fields.contents;
+        return new Map<string, Uint8Array>(
             arr.map((entry: { fields: { key: string, value: Uint8Array } }) => [entry.fields.key, entry.fields.value])
         );
-        return resultMap;
     } catch (error) {
         console.error("Error fetching metadata: no metadata returned in dynamic field",);
         throw error;
@@ -178,7 +178,6 @@ const authorizeUpgrade = (txb: TransactionBlock, packageId: string, proposedUpgr
 
 /// Main entry points, comment out as needed...
 const executeTransaction = async () => {
-
     const txb = new TransactionBlock();
 
     // 1- define a 2 out of 3 quorum upgrade policy
@@ -202,5 +201,7 @@ const executeTransaction = async () => {
     console.dir(res, { depth: null });
 }
 
+// Optionally check for metadata
 // checkMetadata(PROPOSED_UPGRADE_ID);
+// execute transactions
 executeTransaction();
