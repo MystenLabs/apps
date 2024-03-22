@@ -201,7 +201,5 @@ const executeTransaction = async () => {
     console.dir(res, { depth: null });
 }
 
-// Optionally check for metadata
 // checkMetadata(PROPOSED_UPGRADE_ID);
-// execute transactions
 executeTransaction();
