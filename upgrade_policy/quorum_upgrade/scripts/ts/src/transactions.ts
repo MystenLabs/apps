@@ -129,13 +129,8 @@ const executeTransaction = async () => {
     // 4- authorize/commit the upgrade
     authorizeUpgrade(txb, TEST_PACKAGE_ID, PROPOSED_UPGRADE_ID, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE);
 
-<<<<<<< HEAD
     // Run against testnet
     const res = await signAndExecute(txb, 'testnet');
-=======
-    // Run against mainnet
-    const res = await signAndExecute(txb, 'mainnet');
->>>>>>> ds/marketplace-adapter
 
     console.dir(res, { depth: null });
 }
