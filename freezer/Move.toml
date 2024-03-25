@@ -1,0 +1,9 @@
+[package]
+name = "freezer"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+
+[addresses]
+freezer = "0x5b1af417fe97ce96aa3fe90918b7c2dc5560abf0654684a39fd95a559e7bf2be"
+upgrade_cap_ice = "0x8d82eeeaf10066a3c80a3be49affabda4be791f23400d5b7b9274f3e6c07491c"

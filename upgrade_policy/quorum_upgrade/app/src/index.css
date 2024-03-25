@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.TabsTrigger {
+	@apply cursor-pointer;
+}
+.TabsContent {
+	@apply px-3 py-6;
+}
+
+.connect-wallet-wrapper > button {
+	@apply !bg-blue-50 !shadow-none !flex-shrink-0 !py-2 !px-3 !text-sm;
+}

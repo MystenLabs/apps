@@ -11,7 +11,7 @@ const VOTER_1 = '';
 const VOTER_2 = '';
 const VOTER_3 = '';
 // The package id of the `quorum_upgrade_policy` package (published on testnet)
-const QUORUM_UPGRADE_PACKAGE_ID = `0x9722f37d05ba8dd7295e0828edf00849aea17411e76abc3f544ad22069cae733`; 
+const QUORUM_UPGRADE_PACKAGE_ID = `0x9722f37d05ba8dd7295e0828edf00849aea17411e76abc3f544ad22069cae733`;
 // The upgrade cap of the quorum upgrade policy (resulting from `quorum_upgrade_policy::new`)
 const QUORUM_UPGRADE_CAP_ID = ``;
 // path to the package to publish or upgrade
@@ -52,7 +52,7 @@ const newQuorumUpgradeCap = (txb: TransactionBlock, requiredVotes: number, voter
     txb.transferObjects([quorumUpgradeCap], txb.pure.address(quorumCapHolderAddress));
 }
 
-/// Calls `quorum_upgrade_policy::propose_upgrade` 
+/// Calls `quorum_upgrade_policy::propose_upgrade`
 /// Calling this will publish the `ProposedUpgrade` shared object.
 const proposeUpgrade = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string) => {
     const { digest }  = getUpgradeDigest(packagePath);
@@ -129,8 +129,13 @@ const executeTransaction = async () => {
     // 4- authorize/commit the upgrade
     authorizeUpgrade(txb, TEST_PACKAGE_ID, PROPOSED_UPGRADE_ID, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE);
 
+<<<<<<< HEAD
     // Run against testnet
     const res = await signAndExecute(txb, 'testnet');
+=======
+    // Run against mainnet
+    const res = await signAndExecute(txb, 'mainnet');
+>>>>>>> ds/marketplace-adapter
 
     console.dir(res, { depth: null });
 }
