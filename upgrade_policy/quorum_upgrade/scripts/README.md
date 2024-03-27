@@ -34,7 +34,7 @@ and that object id has to be defined in `transaction.ts::QUORUM_UPGRADE_CAP_ID`
 to point to that. Please refer to https://docs.sui.io/concepts/sui-move-concepts/packages/upgrade 
 for details on the upgrade logic and steps. `proposeUpgrade` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1. 
 That will generate a shared `ProposedUpgrade` object whose id can be used to vote.
-2b. Alternatively `proposeUpgradeV2` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1 with optional metadata 
+2b. Alternatively `proposeUpgradeV2` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1 with optional metadata `UPGRADE_METADATA` which is an object where both key and value are strings.
 That will generate a shared `ProposedUpgrade` object whose id can be used to vote, and metadata attached as a dynamic field.
 3a. before voting, `checkMetadata` can be called with `PROPOSED_UPGRADE_ID` to see optional metadata key-value object included with the proposed upgrade.
 3b. `vote` must be called from at least `k` out of the `n` voters providing `QUORUM_UPGRADE_CAP_ID` and `VOTING_CAP_ID` of the signer. 
