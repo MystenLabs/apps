@@ -30,11 +30,13 @@ Execution should happen as follows:
 protect with the quorum upgrade policy. The value of `k` for the `k` out of `n` poilicy has to be
 provided as well. The output of the transaction will save `QuorumUpgradeCap` on the signer address
 and that object id has to be defined in `transaction.ts::QUORUM_UPGRADE_CAP_ID`
-2. the package to be upgraded is available and `transaction.ts::PATH_TO_PACKAGE` must be defined
+2a. the package to be upgraded is available and `transaction.ts::PATH_TO_PACKAGE` must be defined
 to point to that. Please refer to https://docs.sui.io/concepts/sui-move-concepts/packages/upgrade 
 for details on the upgrade logic and steps. `proposeUpgrade` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1. 
 That will generate a shared `ProposedUpgrade` object whose id can be used to vote.
-3a. before voting, `checkMetadata` can be called to see optional metadata key-value object included with the proposed upgrade.
+2b. Alternatively `proposeUpgradeV2` can then run with the `QUORUM_UPGRADE_CAP_ID` from step 1 with optional metadata 
+That will generate a shared `ProposedUpgrade` object whose id can be used to vote, and metadata attached as a dynamic field.
+3a. before voting, `checkMetadata` can be called with `PROPOSED_UPGRADE_ID` to see optional metadata key-value object included with the proposed upgrade.
 3b. `vote` must be called from at least `k` out of the `n` voters providing `QUORUM_UPGRADE_CAP_ID` and `VOTING_CAP_ID` of the signer. 
 4. Once the quorum is reached `authorizeUpgrade` can be executed to commit the transaction.
 

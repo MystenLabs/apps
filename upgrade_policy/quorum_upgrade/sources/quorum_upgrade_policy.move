@@ -275,11 +275,11 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
 
     public fun add_metadata(
         upgrade: &mut ProposedUpgrade,
-        metadata_map: VecMap<string::String, vector<u8>>,
+        metadata_map: VecMap<string::String, string::String>,
         ctx: &mut TxContext,
     ) {
         assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
-        assert!(!df::exists_with_type<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&upgrade.id, UpgradeMetadata {}), EMetadataAlreadyExists);
+        assert!(!df::exists_with_type<UpgradeMetadata, VecMap<string::String, string::String>>(&upgrade.id, UpgradeMetadata {}), EMetadataAlreadyExists);
         df::add(&mut upgrade.id, UpgradeMetadata {}, metadata_map);
     }
 
@@ -417,7 +417,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// retrieve metadata from ProposedUpgrade object in v2
     public fun metadata(
         proposal: &ProposedUpgrade,
-    ): VecMap<string::String, vector<u8>> {
+    ): VecMap<string::String, string::String> {
         *df::borrow(&proposal.id, UpgradeMetadata {})
     }
 
@@ -475,7 +475,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             proposer: signer,
         });
 
-        df::remove_if_exists<UpgradeMetadata, VecMap<string::String, vector<u8>>>(&mut proposal.id, UpgradeMetadata {});
+        df::remove_if_exists<UpgradeMetadata, VecMap<string::String, string::String>>(&mut proposal.id, UpgradeMetadata {});
         let policy = package::upgrade_policy(&cap.upgrade_cap);
         package::authorize_upgrade(
             &mut cap.upgrade_cap,

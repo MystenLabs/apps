@@ -116,7 +116,7 @@ shared object that can be accessed by voters to vote for the proposal.
 Publisher can also invoke `quorum_upgrade_policy::propose_upgrade_v2` providing the 
 `QuorumUpgradeCap` and the `digest` of the upgrade, which returns the 
 `ProposedUpgrade` object that can be passed into `quorum_upgrade_policy::add_metadata`
-along with `metadata`. The `metadata` is a `VecMap<string::String, vector<u8>>` 
+along with `metadata`. The `metadata` is a `VecMap<string::String, string::String>` 
 which is an optional metadata field to include with the proposed_upgrade. 
 Publisher can then call `quorum_upgrade_policy::share_upgrade_object` with the `ProposedUpgrade` object to share the object for voters to vote for the proposal.
 

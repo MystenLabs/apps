@@ -594,8 +594,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
     #[expected_failure(abort_code = quorum_upgrade_policy::quorum_upgrade_policy::EInvalidProposerForMetadata)]
     fun quorum_upgrade_v2_invalid_proposer_metadata_change() {
         let digest: vector<u8> = x"0123456789";
-        let update_metadata_map = vec_map::empty<string::String, vector<u8>>();
-        vec_map::insert(&mut update_metadata_map, string::utf8(b"metadata_key"), b"metadata_info");
+        let update_metadata_map = vec_map::empty<string::String, string::String>();
+        vec_map::insert(&mut update_metadata_map, string::utf8(b"metadata_key"), string::utf8(b"metadata_info"));
 
         let test = test::begin(ADDRESS_1);
         let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
@@ -616,9 +616,9 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
     #[test]
     fun quorum_upgrade_v2_add_metadata() {
         let digest: vector<u8> = x"0123456789";
-        let metadata_map = vec_map::empty<string::String, vector<u8>>();
-        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), b"metadata_info");
-        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key_2"), b"metadata_info_2");
+        let metadata_map = vec_map::empty<string::String, string::String>();
+        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), string::utf8(b"metadata_info"));
+        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key_2"), string::utf8(b"metadata_info_2"));
 
         let test = test::begin(ADDRESS_1);
         let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
@@ -630,9 +630,9 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         test::next_tx(&mut test, @0x100);
         let voter_cap = test::take_from_address<VotingCap>(&test, @0x100);
         let proposal = test::take_shared<ProposedUpgrade>(&test);
-        let metadata_map: VecMap<string::String, vector<u8>> = quorum_upgrade_policy::metadata(&proposal);
-        assert!(*vec_map::get(&metadata_map, &string::utf8(b"metadata_key")) == b"metadata_info", 0);
-        assert!(*vec_map::get(&metadata_map, &string::utf8(b"metadata_key_2")) == b"metadata_info_2", 0);
+        let metadata_map: VecMap<string::String, string::String> = quorum_upgrade_policy::metadata(&proposal);
+        assert!(*vec_map::get(&metadata_map, &string::utf8(b"metadata_key")) == string::utf8(b"metadata_info"), 0);
+        assert!(*vec_map::get(&metadata_map, &string::utf8(b"metadata_key_2")) == string::utf8(b"metadata_info_2"), 0);
         quorum_upgrade_policy::vote(&mut proposal, &mut voter_cap, ctx(&mut test));
         test::return_to_address(@0x100, voter_cap);
 
@@ -648,10 +648,10 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
     #[expected_failure(abort_code = quorum_upgrade_policy::quorum_upgrade_policy::EMetadataAlreadyExists)]
     fun quorum_upgrade_v2_cannot_add_metadata_twice() {
         let digest: vector<u8> = x"0123456789";
-        let metadata_map = vec_map::empty<string::String, vector<u8>>();
-        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), b"metadata_info");
-        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key_2"), b"metadata_info_2");
-        let update_metadata_map = vec_map::empty<string::String, vector<u8>>();
+        let metadata_map = vec_map::empty<string::String, string::String>();
+        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), string::utf8(b"metadata_info"));
+        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key_2"), string::utf8(b"metadata_info_2"));
+        let update_metadata_map = vec_map::empty<string::String, string::String>();
 
         let test = test::begin(ADDRESS_1);
         let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
@@ -846,8 +846,8 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         test: &mut Scenario,
     ) {
         test::next_tx(test, sender);
-        let metadata_map = vec_map::empty<string::String, vector<u8>>();
-        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), b"metadata_info");
+        let metadata_map = vec_map::empty<string::String, string::String>();
+        vec_map::insert(&mut metadata_map, string::utf8(b"metadata_key"), string::utf8(b"metadata_info"));
         let proposed_upgrade = quorum_upgrade_policy::propose_upgrade_v2(quorum_upgrade_cap, digest, ctx(test));
         quorum_upgrade_policy::add_metadata(&mut proposed_upgrade, metadata_map, ctx(test));
         quorum_upgrade_policy::share_upgrade_object(proposed_upgrade);

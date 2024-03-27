@@ -80,10 +80,10 @@ export const prepareAddressVecSet = (txb: TransactionBlock, voters: string[]): T
 }
 
 /// Construct a VecMap of (string, vector<u8>) key-value pairs.
-export const prepareMetadataVecMap = (txb: TransactionBlock, metadata: { [key: string]: Uint8Array }): TransactionArgument => {
+export const prepareMetadataVecMap = (txb: TransactionBlock, metadata: { [key: string]: string }): TransactionArgument => {
     const vecMap = txb.moveCall({
         target: `0x2::vec_map::empty`,
-        typeArguments: ['0x1::string::String', 'vector<u8>']
+        typeArguments: ['0x1::string::String', '0x1::string::String']
     });
 
     Object.entries(metadata).forEach(([key, value]) => {
@@ -92,9 +92,9 @@ export const prepareMetadataVecMap = (txb: TransactionBlock, metadata: { [key: s
             arguments: [
                 vecMap,
                 txb.pure.string(key),
-                txb.pure(Array.from(value), 'vector<u8>'),
+                txb.pure.string(value),
             ],
-            typeArguments: ['0x1::string::String', 'vector<u8>']
+            typeArguments: ['0x1::string::String', '0x1::string::String']
         });
     });
     return vecMap;

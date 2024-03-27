@@ -75,7 +75,7 @@ const proposeUpgrade = (txb: TransactionBlock, quorumUpgradeCapId: string, packa
 
 /// Calls `quorum_upgrade_policy::propose_upgrade_v2`, `quorum_upgrade_policy::add_all_metadata` (optional), `quorum_upgrade_policy::share_upgrade_object`,  
 /// Calling this will publish the `ProposedUpgrade` shared object.
-const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: Uint8Array } | null) => {
+const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: string } | null) => {
     const { digest }  = getUpgradeDigest(packagePath);
 
     const proposedUpgrade = txb.moveCall({
@@ -117,8 +117,8 @@ const getMetadata = async (proposedUpgradeObjectId: string) => {
             options: {showContent: true}
         });
         const arr = (output as any).data.content.fields.value.fields.contents;
-        return new Map<string, Uint8Array>(
-            arr.map((entry: { fields: { key: string, value: Uint8Array } }) => [entry.fields.key, entry.fields.value])
+        return new Map<string, string>(
+            arr.map((entry: { fields: { key: string, value: string } }) => [entry.fields.key, entry.fields.value])
         );
     } catch (error) {
         console.error("Error fetching metadata: no metadata returned in dynamic field",);
