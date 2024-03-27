@@ -11,6 +11,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
     use sui::test_scenario::{Self as test, Scenario, ctx};
     use sui::vec_map::{Self, VecMap};
     use std::string;
+    use sui::object::{Self};
 
     const ADDRESS_1: address = @0x1;
     const ADDRESS_2: address = @0x2;
@@ -787,6 +788,65 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x104, &mut test);
         perform_upgrade_v2(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
+        test::end(test);
+    }
+
+    #[test]
+    fun test_destroy_proposed_upgrade_ok() {
+        let test = test::begin(ADDRESS_1);
+        let digest: vector<u8> = x"0123456789";
+        let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
+
+        propose_upgrade_v2_with_metadata(ADDRESS_1, &quorum_upgrade_cap, digest, &mut test);
+        vote(@0x101, &mut test);
+
+        test::next_tx(&mut test, ADDRESS_1);
+        let proposal = test::take_shared<ProposedUpgrade>(&test);
+        quorum_upgrade_policy::destroy_proposed_upgrade(proposal, ctx(&mut test));
+        quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
+        test::end(test);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = quorum_upgrade_policy::quorum_upgrade_policy::ESignerMismatch)]
+    fun test_destroy_proposed_upgrade_wrong_signer() {
+        let test = test::begin(ADDRESS_1);
+        let digest: vector<u8> = x"0123456789";
+        let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
+
+        propose_upgrade_v2_with_metadata(ADDRESS_1, &quorum_upgrade_cap, digest, &mut test);
+        vote(@0x101, &mut test);
+
+        test::next_tx(&mut test, ADDRESS_2);
+        let proposal = test::take_shared<ProposedUpgrade>(&test);
+        quorum_upgrade_policy::destroy_proposed_upgrade(proposal, ctx(&mut test));
+        quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
+        test::end(test);
+    }
+
+    #[test]
+    fun test_accessor_functions() {
+        let test = test::begin(ADDRESS_1);
+        let digest: vector<u8> = x"0123456789";
+        let quorum_upgrade_cap = get_quorum_upgrade_cap(3, 5, &mut test);
+        test::next_tx(&mut test, ADDRESS_1);
+
+        propose_upgrade_v2_with_metadata(ADDRESS_1, &quorum_upgrade_cap, digest, &mut test);
+
+        test::next_tx(&mut test, ADDRESS_1);
+        let proposed_upgrade = test::take_shared<ProposedUpgrade>(&test);
+        let votes = quorum_upgrade_policy::required_votes(&quorum_upgrade_cap);
+        assert!(votes == 3, 0);
+        let voters = quorum_upgrade_policy::voters(&quorum_upgrade_cap);
+        assert!(vec_set::size(voters) == 5, 1);
+        let proposer = quorum_upgrade_policy::proposer(&proposed_upgrade);
+        assert!(proposer == ADDRESS_1, 2);
+        let proposal_digest = quorum_upgrade_policy::digest(&proposed_upgrade);
+        assert!(proposal_digest == &digest, 3);
+        let current_voters = quorum_upgrade_policy::current_voters(&proposed_upgrade);
+        assert!(vec_set::is_empty(current_voters), 4);
+        quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
+        test::return_shared(proposed_upgrade);
         test::end(test);
     }
 
