@@ -1,14 +1,13 @@
 
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { getUpgradeDigest, getActiveAddress, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
-import { getFullnodeUrl, SuiClient } from '@mysten/sui.js/client';
+import { getUpgradeDigest, getClient, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
 
 // =================================================================
 // Constants to update when running the different transactions
 // =================================================================
 
 const ENV = 'mainnet';
-const SUICLIENT = new SuiClient({ url: getFullnodeUrl(ENV) });
+const SUICLIENT = getClient(ENV);
 
 // Voters. Add all addresses that will be part of the quorum policy.
 const VOTER_1 = '';
