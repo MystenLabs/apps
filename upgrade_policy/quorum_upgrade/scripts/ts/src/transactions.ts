@@ -128,9 +128,8 @@ const getMetadata = async (proposedUpgradeObjectId: string) => {
 
 /// check the optional metadata for a proposed upgrade, returns a key value map
 const checkMetadata = async (proposedUpgradeObjectId: string) => {
-    // Do something with the metadata
     const metadata = await getMetadata(proposedUpgradeObjectId);
-    return metadata
+    console.log(metadata); // Do something with the metadata
 }
 
 /// Vote for a particular `ProposedUpgrade` shared object.
