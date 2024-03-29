@@ -133,9 +133,9 @@ upgrade
 `QuorumUpgradeCap` and the `ProposedUpgrade` object reference, followed by the `upgrade`
 command and a call to `quorum_upgrade_policy::commit_upgrade` with the
 receipt obtained by the upgrade command.
-- Alternatively `quorum_upgrade_policy::authorize_upgrade_v2` is called providing 
+- Alternatively `quorum_upgrade_policy::authorize_upgrade_and_cleanup` is called providing 
 the `QuorumUpgradeCap` and the `ProposedUpgrade` object. The process is the same as 
-`authorize_upgrade` except that the `ProposedUpgrade` object is deleted.
+`authorize_upgrade` except that the shared `ProposedUpgrade` object is deleted.
 
 After that the upgrade is live and can be used by users.
 

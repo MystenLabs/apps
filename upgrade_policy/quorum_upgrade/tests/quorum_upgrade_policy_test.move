@@ -11,7 +11,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
     use sui::test_scenario::{Self as test, Scenario, ctx};
     use sui::vec_map::{Self, VecMap};
     use std::string;
-    use sui::object::{Self};
 
     const ADDRESS_1: address = @0x1;
     const ADDRESS_2: address = @0x2;
@@ -679,7 +678,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x100, &mut test);
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
-        perform_upgrade_v2(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -694,7 +693,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x107, &mut test);
         vote(@0x108, &mut test);
         vote(@0x109, &mut test);
-        perform_upgrade_v2(ADDRESS_2, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_2, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -705,7 +704,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
         vote(@0x105, &mut test);
-        perform_upgrade_v2(@0x3, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(@0x3, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -713,7 +712,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         let quorum_upgrade_cap = get_quorum_upgrade_cap(1, 100, &mut test);
         propose_upgrade_v2_no_metadata(@0x4, &quorum_upgrade_cap, digest, &mut test);
         vote(@0x140, &mut test);
-        perform_upgrade_v2(@0x4, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(@0x4, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -725,7 +724,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x102, &mut test); 
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
-        perform_upgrade_v2(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
     }
@@ -740,7 +739,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x100, &mut test);
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
-        perform_upgrade_v2(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -755,7 +754,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x107, &mut test);
         vote(@0x108, &mut test);
         vote(@0x109, &mut test);
-        perform_upgrade_v2(ADDRESS_2, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_2, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -766,7 +765,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
         vote(@0x105, &mut test);
-        perform_upgrade_v2(@0x3, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(@0x3, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -774,7 +773,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         let quorum_upgrade_cap = get_quorum_upgrade_cap(1, 100, &mut test);
         propose_upgrade_v2_with_metadata(@0x4, &quorum_upgrade_cap, digest, &mut test);
         vote(@0x140, &mut test);
-        perform_upgrade_v2(@0x4, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(@0x4, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
 
@@ -786,7 +785,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         vote(@0x102, &mut test); 
         vote(@0x101, &mut test);
         vote(@0x104, &mut test);
-        perform_upgrade_v2(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
+        perform_upgrade_and_cleanup(ADDRESS_1, &mut quorum_upgrade_cap, &mut test);
         quorum_upgrade_policy::make_immutable(quorum_upgrade_cap);
         test::end(test);
     }
@@ -930,14 +929,14 @@ module quorum_upgrade_policy::quorum_upgrade_policy_test {
         test::return_shared(proposal);
     }
 
-    fun perform_upgrade_v2(
+    fun perform_upgrade_and_cleanup(
         sender: address, 
         quorum_upgrade_cap: &mut QuorumUpgradeCap, 
         test: &mut Scenario,
     ) {
         test::next_tx(test, sender);
         let proposal = test::take_shared<ProposedUpgrade>(test);
-        let ticket = quorum_upgrade_policy::authorize_upgrade_v2(
+        let ticket = quorum_upgrade_policy::authorize_upgrade_and_cleanup(
             quorum_upgrade_cap, 
             proposal,
             ctx(test),

@@ -327,7 +327,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         authorize(cap, proposal, ctx)
     }
 
-    public fun authorize_upgrade_v2(
+    public fun authorize_upgrade_and_cleanup(
         cap: &mut QuorumUpgradeCap,
         proposal_obj: ProposedUpgrade, 
         ctx: &TxContext,

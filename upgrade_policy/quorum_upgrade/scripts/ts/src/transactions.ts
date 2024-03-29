@@ -1,6 +1,6 @@
 
 import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { getUpgradeDigest, getClient, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
+import { getUpgradeDigest, getActiveAddress, getClient, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
 
 // =================================================================
 // Constants to update when running the different transactions
@@ -149,7 +149,7 @@ const vote = (txb: TransactionBlock, proposedUpgradeObjectId: string, votingCapO
 const authorizeUpgrade = (txb: TransactionBlock, packageId: string, proposedUpgradeObjectId: string, quorumUpgradeCapId: string, packagePath: string) => {
 
     const ticket = txb.moveCall({
-        target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::authorize_upgrade`,
+        target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::authorize_upgrade_and_cleanup`,
         arguments: [
             txb.object(quorumUpgradeCapId),
             txb.object(proposedUpgradeObjectId),
