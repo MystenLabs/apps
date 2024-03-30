@@ -10,11 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mysten/sui.js": "^0.46.1",
+    "@mysten/sui.js": "^0.51.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.3.2"
+    "typescript": "^5.4.3"
   },
   "devDependencies": {
-    "@types/node": "^20.9.3"
+    "@types/node": "^20.11.27"
   }
 }
