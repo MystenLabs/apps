@@ -19,6 +19,9 @@ module mkt::extension {
     friend mkt::fixed_trading;
     friend mkt::single_bid;
 
+    /// Extension can't be installed in a non-personal Kiosk.
+    const ENotPersonal: u64 = 0;
+
     /// The extension Witness.
     public struct Extension has drop {}
 
@@ -27,8 +30,7 @@ module mkt::extension {
 
     /// Install the Marketplace Extension into the Kiosk.
     public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
-        // TODO: check that the kiosk is a personal kiosk
-        personal_kiosk::is_personal(kiosk);
+        assert!(personal_kiosk::is_personal(kiosk), ENotPersonal);
         ext::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
     }
 

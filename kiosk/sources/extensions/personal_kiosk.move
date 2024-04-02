@@ -19,7 +19,7 @@ module kiosk::personal_kiosk {
     const EIncorrectOwnedObject: u64 = 1;
     /// Trying to get the owner of a non-personal Kiosk.
     const EKioskNotOwned: u64 = 2;
-    /// Trying to make a someone else's Kiosk "personal".
+    /// Trying to make someone else's Kiosk "personal".
     const EWrongKiosk: u64 = 3;
 
     /// A key-only wrapper for the KioskOwnerCap. Makes sure that the Kiosk can
@@ -42,7 +42,7 @@ module kiosk::personal_kiosk {
 
     /// The default setup for the PersonalKioskCap.
     entry fun default(kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
-        transfer_to_sender(new(kiosk, cap, ctx), ctx);
+        transfer_to_sender(new(kiosk, cap, ctx), ctx)
     }
 
     /// Wrap the KioskOwnerCap making the Kiosk "owned" and non-transferable.
@@ -73,7 +73,7 @@ module kiosk::personal_kiosk {
         // wrap the Cap in the `PersonalKioskCap`
         PersonalKioskCap {
             id: object::new(ctx),
-            cap: option::some(cap)
+            cap: option::some(cap),
         }
     }
 

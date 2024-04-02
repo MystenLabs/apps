@@ -1,5 +1,5 @@
 [package]
-name = "kiosk-marketplace"
+name = "KioskMarketplace"
 edition = "2024.alpha"
 
 # edition = "2024.alpha" # To use the Move 2024 edition, currently in alpha
