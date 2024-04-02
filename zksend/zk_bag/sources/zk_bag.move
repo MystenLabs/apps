@@ -133,15 +133,14 @@ module zk_bag::zk_bag {
     }
 
     /// Claim an item from the bag.
-    /// Run N of these in a PTB to claim all items. This works in an all-or-nothing way.
+    /// Run N of these in a PTB to claim all items.
     public fun claim<T: key + store>(bag: &mut ZkBag, claim: &BagClaim, receiving: Receiving<T>): T {
         assert!(is_valid_claim_object(bag, claim), EUnauthorizedProof);
 
         let item = transfer::public_receive(&mut bag.id, receiving);
 
         // We only claim items the owner explicitly added here (transfered through `add` of this module).
-        // Protects us from reducing the count when the item was never explicitly added, or to prevent claiming
-        // "spam" objects.
+        // Protects us from claiming "spam" objects anyone could TTO to the bag.
         assert!(vec_set::contains(&bag.item_ids, &object::id_address(&item)), EItemNotExists);
 
         vec_set::remove(&mut bag.item_ids, &object::id_address(&item));
@@ -149,7 +148,8 @@ module zk_bag::zk_bag {
         item
     }
 
-    /// finalize this + destroy the bag to get storage rebates.
+    /// Finalize this + destroy the bag to get storage rebates.
+    /// Can only be finalized when we've claimed all items from the bag.
     public fun finalize(bag: ZkBag, claim: BagClaim) {
         assert!(is_valid_claim_object(&bag, &claim), EUnauthorizedProof);
         assert!(vec_set::is_empty(&bag.item_ids), EBagNotEmpty);
