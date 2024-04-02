@@ -3,7 +3,6 @@
 
 #[test_only]
 module mkt::test_utils {
-    use sui::object::ID;
     use sui::sui::SUI;
     use sui::coin::{Self, Coin};
     use sui::kiosk::{Self, Kiosk};

@@ -12,14 +12,12 @@
 module mkt::collection_bidding {
     use std::type_name;
     use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
-    use sui::tx_context::TxContext;
     use sui::coin::{Self, Coin};
     use sui::transfer_policy::{
         TransferPolicy,
         TransferRequest,
     };
     use sui::sui::SUI;
-    use sui::object::{Self, ID};
     use sui::event;
     use sui::pay;
 
@@ -96,9 +94,10 @@ module mkt::collection_bidding {
         bids: vector<Coin<SUI>>,
         ctx: &mut TxContext
     ): address {
-        assert!(bids.length() > 0, ENoCoinsPassed);
         assert!(kiosk::has_access(kiosk, cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
+        assert!(bids.length() > 0, ENoCoinsPassed);
 
         let order_id = ctx.fresh_object_address();
         let mut amounts = vector[];
@@ -127,6 +126,7 @@ module mkt::collection_bidding {
         kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext
     ): Coin<SUI> {
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
         assert!(kiosk.has_access(cap), ENotAuthorized);
 
         let Bids { bids, order_id } = ext::storage_mut(kiosk)
@@ -171,7 +171,7 @@ module mkt::collection_bidding {
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
-        assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
+        assert!(ext::is_installed(buyer), EExtensionNotInstalled);
         assert!(ext::is_enabled(buyer), EExtensionDisabled);
         assert!(seller.has_access(seller_cap), ENotAuthorized);
         assert!(type_name::get<Market>() != type_name::get<NoMarket>(), EIncorrectMarketArg);

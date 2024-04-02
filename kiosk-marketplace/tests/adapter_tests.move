@@ -6,7 +6,6 @@
 module mkt::adapter_tests {
     use sui::coin;
     use sui::kiosk;
-    use sui::object;
     use sui::sui::SUI;
     use sui::transfer_policy as policy;
     use sui::kiosk_test_utils::{Self as test, Asset};

@@ -12,8 +12,6 @@
 module mkt::single_bid {
     use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::transfer_policy::{TransferPolicy, TransferRequest};
-    use sui::tx_context::TxContext;
-    use sui::object::{Self, ID};
     use sui::coin::{Self, Coin};
     use sui::balance::Balance;
     use sui::sui::SUI;
@@ -34,6 +32,8 @@ module mkt::single_bid {
     const ENoBid: u64 = 4;
     /// Order ID mismatch
     const EOrderMismatch: u64 = 5;
+    /// Extension is disabled in the kiosk.
+    const EExtensionDisabled: u64 = 6;
 
     /// The dynamic field key for the Bid.
     public struct Bid<phantom Market, phantom T> has copy, store, drop { item_id: ID }
@@ -81,6 +81,7 @@ module mkt::single_bid {
     ): address {
         assert!(kiosk.has_access(cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
 
         let order_id = ctx.fresh_object_address();
 
@@ -112,7 +113,9 @@ module mkt::single_bid {
         _lock: bool,
         ctx: &mut TxContext
     ): (TransferRequest<T>, TransferRequest<Market>) {
-        assert!(ext::is_enabled(buyer), EExtensionNotInstalled);
+        assert!(seller.has_access(seller_cap), ENotAuthorized);
+        assert!(ext::is_installed(buyer), EExtensionNotInstalled);
+        assert!(ext::is_enabled(buyer), EExtensionDisabled);
         assert!(ext::storage(buyer).contains(Bid<Market, T> { item_id }), ENoBid);
         assert!(seller.has_item(item_id), EItemNotFound);
         assert!(!seller.is_listed(item_id), EAlreadyListed);
@@ -147,6 +150,7 @@ module mkt::single_bid {
     ): Coin<SUI> {
         assert!(kiosk.has_access(kiosk_cap), ENotAuthorized);
         assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
         assert!(ext::storage(kiosk).contains(Bid<Market, T> { item_id }), ENoBid);
 
         let PlacedBid {

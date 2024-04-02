@@ -1,6 +1,6 @@
 [package]
 name = "kiosk-marketplace"
-edition = "2024.alpha"
+edition = "2024.beta"
 published-at = "0xa3aca6bfb159524f43f6d631d866a1a39d4ce4fe03326bf3b510c06bdc48fb56"
 # upgrade-cap = "0x2bde1c7cfe52e0262645672abecc033e8537795983448fdd6afffb9c795502dc"
 

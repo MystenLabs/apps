@@ -8,16 +8,14 @@ module mkt::extension {
     use sui::transfer_policy::{Self as policy, TransferPolicy};
     use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::kiosk_extension as ext;
-    use sui::tx_context::TxContext;
     use sui::bag::Bag;
     use sui::vec_set;
 
     use kiosk::kiosk_lock_rule::Rule as LockRule;
     use kiosk::personal_kiosk;
 
-    friend mkt::collection_bidding;
-    friend mkt::fixed_trading;
-    friend mkt::single_bid;
+    /// Error code for the extension not being installed in the Kiosk.
+    const ENotPersonal: u64 = 0;
 
     /// The extension Witness.
     public struct Extension has drop {}
@@ -27,8 +25,7 @@ module mkt::extension {
 
     /// Install the Marketplace Extension into the Kiosk.
     public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
-        // TODO: check that the kiosk is a personal kiosk
-        personal_kiosk::is_personal(kiosk);
+        assert!(personal_kiosk::is_personal(kiosk), ENotPersonal);
         ext::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
     }
 
@@ -45,31 +42,31 @@ module mkt::extension {
     // === Friend only ===
 
     /// Place the item into the Kiosk.
-    public(friend) fun place<T: key + store>(
+    public(package) fun place<T: key + store>(
         kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>
     ) {
         ext::place(Extension {}, kiosk, item, policy)
     }
 
     /// Lock the item in the Kiosk.
-    public(friend) fun lock<T: key + store>(
+    public(package) fun lock<T: key + store>(
         kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>
     ) {
         ext::lock(Extension {}, kiosk, item, policy)
     }
 
     /// Get the reference to the extension storage.
-    public(friend) fun storage(kiosk: &Kiosk): &Bag {
+    public(package) fun storage(kiosk: &Kiosk): &Bag {
         ext::storage(Extension {}, kiosk)
     }
 
     /// Get the mutable reference to the extension storage.
-    public(friend) fun storage_mut(kiosk: &mut Kiosk): &mut Bag {
+    public(package) fun storage_mut(kiosk: &mut Kiosk): &mut Bag {
         ext::storage_mut(Extension {}, kiosk)
     }
 
     /// Place or Lock the item into the Kiosk, based on the policy.
-    public(friend) fun place_or_lock<T: key + store>(
+    public(package) fun place_or_lock<T: key + store>(
         kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>
     ) {
         let should_lock = vec_set::contains(

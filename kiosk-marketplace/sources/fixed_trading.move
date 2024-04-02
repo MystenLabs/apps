@@ -11,8 +11,6 @@
 module mkt::fixed_trading {
     use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::transfer_policy::TransferRequest;
-    use sui::tx_context::TxContext;
-    use sui::object::{Self, ID};
     use sui::coin::Coin;
     use sui::sui::SUI;
     use sui::event;
@@ -27,6 +25,10 @@ module mkt::fixed_trading {
     const ENotListed: u64 = 1;
     /// The payment is not enough to purchase the item.
     const EIncorrectAmount: u64 = 2;
+    /// The extension is not installed.
+    const EExtensionNotInstalled: u64 = 3;
+    /// The extension is disabled.
+    const EExtensionDisabled: u64 = 4;
 
     public struct Listing<phantom Market, phantom T: key + store> has store {
         market_cap: MarketPurchaseCap<Market, T>,
@@ -69,6 +71,8 @@ module mkt::fixed_trading {
         price: u64,
         ctx: &mut TxContext
     ): address {
+        assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
         assert!(kiosk.has_access(cap), ENotOwner);
 
         let order_id = ctx.fresh_object_address();
@@ -96,6 +100,8 @@ module mkt::fixed_trading {
         item_id: ID,
         ctx: &mut TxContext
     ) {
+        assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
         assert!(kiosk.has_access(cap), ENotOwner);
         assert!(kiosk.is_listed<Market, T>(item_id), ENotListed);
 
@@ -117,6 +123,8 @@ module mkt::fixed_trading {
         payment: Coin<SUI>,
         ctx: &mut TxContext
     ): (T, TransferRequest<T>, TransferRequest<Market>) {
+        assert!(ext::is_installed(kiosk), EExtensionNotInstalled);
+        assert!(ext::is_enabled(kiosk), EExtensionDisabled);
         assert!(kiosk.is_listed<Market, T>(item_id), ENotListed);
 
         let Listing<Market, T> {
