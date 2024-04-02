@@ -9,7 +9,6 @@ module mkt::extension {
     use sui::kiosk::{Kiosk, KioskOwnerCap};
     use sui::kiosk_extension as ext;
     use sui::bag::Bag;
-    use sui::vec_set;
 
     use kiosk::kiosk_lock_rule::Rule as LockRule;
     use kiosk::personal_kiosk;
@@ -69,10 +68,8 @@ module mkt::extension {
     public(package) fun place_or_lock<T: key + store>(
         kiosk: &mut Kiosk, item: T, policy: &TransferPolicy<T>
     ) {
-        let should_lock = vec_set::contains(
-            policy::rules(policy),
-            &type_name::get<LockRule>()
-        );
+        let should_lock = policy::rules(policy)
+            .contains(&type_name::get<LockRule>());
 
         if (should_lock) {
             lock(kiosk, item, policy)
