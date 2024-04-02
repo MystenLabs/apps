@@ -72,13 +72,13 @@ const proposeUpgrade = (txb: TransactionBlock, quorumUpgradeCapId: string, packa
 
 }
 
-/// Calls `quorum_upgrade_policy::propose_upgrade_v2`, `quorum_upgrade_policy::add_all_metadata` (optional), `quorum_upgrade_policy::share_upgrade_object`,  
+/// Calls `quorum_upgrade_policy::create_upgrade`, `quorum_upgrade_policy::add_all_metadata` (optional), `quorum_upgrade_policy::share_upgrade_object`,  
 /// Calling this will publish the `ProposedUpgrade` shared object.
-const proposeUpgradeV2 = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: string } | null) => {
+const proposeUpgradeWithMetadata = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: string } | null) => {
     const { digest }  = getUpgradeDigest(packagePath);
 
     const proposedUpgrade = txb.moveCall({
-        target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::propose_upgrade_v2`,
+        target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::create_upgrade`,
         arguments: [
             txb.object(quorumUpgradeCapId),
             txb.pure(digest, 'vector<u8>')
@@ -185,7 +185,7 @@ const executeTransaction = async () => {
     proposeUpgrade(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE);
 
     // 2b- propose an upgrade with metadata. Digest is determined automatically via the package path, can include optional metadata
-    proposeUpgradeV2(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE, UPGRADE_METADATA);
+    proposeUpgradeWithMetadata(txb, QUORUM_UPGRADE_CAP_ID, PATH_TO_PACKAGE, UPGRADE_METADATA);
     
     // 3- vote for an upgrade
     vote(txb, PROPOSED_UPGRADE_ID, VOTING_CAP_ID);
