@@ -6,9 +6,10 @@ ZkBag is the smart contract behind [zkSend](https://zksend.com/).
 
 An ephemeral address is created, whose private key is encoded on the URL.
 That private key has access to "claim" anything that address owns, and in the case
-of this smart contract, claim the contents of the on-chain bag. Each object is returned by 
-value and can be transferred with a `public_transfer` (or used in any other way the recipient
-wants to).
+of this smart contract, claim the contents of the on-chain bag.
+
+Each object is returned by value and can be transferred with a `public_transfer` 
+(or used in any other way the recipient wants to).
 
 [Learn how to create links here](https://sdk.mystenlabs.com/zksend/link-builder)
 
