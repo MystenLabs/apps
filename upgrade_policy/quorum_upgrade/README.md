@@ -113,7 +113,7 @@ with a call to `sui move build --dump-bytecode-as-base64` against the code of
 the upgrade. The result of `propose_upgrade` is the creation of a `ProposedUpgrade`
 shared object that can be accessed by voters to vote for the proposal.
 
-Publisher can also invoke `quorum_upgrade_policy::propose_upgrade_v2` providing the 
+Publisher can also invoke `quorum_upgrade_policy::create_upgrade` providing the 
 `QuorumUpgradeCap` and the `digest` of the upgrade, which returns the 
 `ProposedUpgrade` object that can be passed into `quorum_upgrade_policy::add_metadata`
 along with `metadata`. The `metadata` is a `VecMap<string::String, string::String>` 
