@@ -1,0 +1,10 @@
+[package]
+name = "enhanced_frens"
+edition = "2024.beta"
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override=true }
+suifrens = { git = "https://github.com/MystenLabs/apps.git", subdir = "suifrens/suifrens", rev = "testnet" }
+
+
+[addresses]
+enhanced_frens = "0x0"

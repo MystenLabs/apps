@@ -23,6 +23,10 @@ explicitly typed functions using suifrens.
 genes property can be used to build custom logic and how to attach custom,
 application-specific keys to the SuiFren.
 
+- [*enhanced-frens*](./enhanced-frens/) - this application illustrates how you can
+attach custom data on a suifren, attaching in-game data in any registered SuiFren.
+It also has some sample scripts using the Kiosk SDK to register any owned fren in the game.
+
 ## Usage
 
 ```bash
