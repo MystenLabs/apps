@@ -56,12 +56,8 @@
 /// - the creation and usage of a `Ballot` to vote for the upgrade is also being
 /// discussed. The ballot will be transferable and an easy way to relate to a proposal
 module quorum_upgrade_policy::quorum_upgrade_policy {
-    use std::vector;
     use sui::event;
-    use sui::object::{Self, ID, UID};
     use sui::package::{Self, UpgradeCap, UpgradeTicket, UpgradeReceipt};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
     use sui::vec_set::{Self, VecSet};
     use sui::dynamic_field::{Self as df};
     use sui::vec_map::{VecMap};
@@ -70,7 +66,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// The capability controlling the upgrade. 
     /// Initialized with `new` is returned to the caller to be stored as desired.
     /// From this point on every upgrade is performed via this policy.
-    struct QuorumUpgradeCap has key, store {
+    public struct QuorumUpgradeCap has key, store {
         id: UID,
         /// Upgrade cap of the package controlled by this policy.
         upgrade_cap: UpgradeCap,
@@ -85,7 +81,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// Capability to vote an upgrade.
     /// Sent to each registered address when a new upgrade is created.
     /// Receiving parties will use the capability to vote for the upgrade. 
-    struct VotingCap has key {
+    public struct VotingCap has key {
         id: UID,
         /// The original address the capability was sent to.
         owner: address,
@@ -106,7 +102,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// the first successful upgrade will obsolete all the others, given
     /// an attempt to upgrade with a "concurrent" one will fail because of
     /// versioning.
-    struct ProposedUpgrade has key {
+    public struct ProposedUpgrade has key {
         id: UID,
         /// The ID of the `QuorumUpgradeCap` that this vote was initiated from.
         upgrade_cap: ID,
@@ -125,7 +121,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     //
 
     /// A new proposal for an upgrade.
-    struct UpgradeProposed has copy, drop {
+    public struct UpgradeProposed has copy, drop {
         /// The instance of the quorum upgrade policy.
         upgrade_cap: ID,
         /// The ID of the proposal (`ProposedUpgrade` instance).
@@ -139,7 +135,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// A given proposal was voted.
-    struct UpgradeVoted has copy, drop {
+    public struct UpgradeVoted has copy, drop {
         /// The ID of the proposal (`ProposedUpgrade` instance).
         proposal: ID,
         /// Digest of the proposal.
@@ -151,7 +147,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// A succesful upgrade.
-    struct UpgradePerformed has copy, drop {
+    public struct UpgradePerformed has copy, drop {
         /// The instance of the quorum upgrade policy.
         upgrade_cap: ID,
         /// the ID of the proposal (`ProposedUpgrade` instance).
@@ -163,7 +159,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// A proposal is destroyed.
-    struct UpgradeDestroyed has copy, drop {
+    public struct UpgradeDestroyed has copy, drop {
         /// The instance of the quorum upgrade policy.
         upgrade_cap: ID,
         /// The ID of the proposal (`ProposedUpgrade` instance).
@@ -175,7 +171,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// struct for optional upgrade metadata
-    struct UpgradeMetadata has store, copy, drop {}
+    public struct UpgradeMetadata has store, copy, drop {}
 
     /// Allowed voters must in the [1, 100] range.
     const EAllowedVotersError: u64 = 0;
@@ -211,21 +207,21 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     ): QuorumUpgradeCap {
         // currently the allowed voters is limited to 100 and the number of
         // required votes must be bigger than 0 and less or equal than the number of voters
-        assert!(vec_set::size(&voters) > 0, EAllowedVotersError);
-        assert!(vec_set::size(&voters) <= 100, EAllowedVotersError);
+        assert!(voters.size() > 0, EAllowedVotersError);
+        assert!(voters.size() <= 100, EAllowedVotersError);
         assert!(required_votes > 0, ERequiredVotesError);
-        assert!(required_votes <= vec_set::size(&voters), ERequiredVotesError);
+        assert!(required_votes <= voters.size(), ERequiredVotesError);
 
         // upgrade cap id
         let cap_uid = object::new(ctx);
         let cap_id = object::uid_to_inner(&cap_uid);
 
-        let voter_caps: VecSet<ID> = vec_set::empty();
-        let voter_addresses = vec_set::keys(&voters);
-        let voter_idx = vector::length(voter_addresses);
+        let mut voter_caps: VecSet<ID> = vec_set::empty();
+        let voter_addresses = voters.keys();
+        let mut voter_idx = voter_addresses.length();
         while (voter_idx > 0) {
             voter_idx = voter_idx - 1;
-            let address = *vector::borrow(voter_addresses, voter_idx);
+            let address = voter_addresses[voter_idx];
             let voter_uid = object::new(ctx);
             let voter_id = object::uid_to_inner(&voter_uid);
             transfer::transfer(
@@ -238,7 +234,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
                 },
                 address,
             );
-            vec_set::insert(&mut voter_caps, voter_id);
+            voter_caps.insert(voter_id);
         };
 
         QuorumUpgradeCap {
@@ -278,12 +274,12 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         metadata_map: VecMap<string::String, string::String>,
         ctx: &mut TxContext,
     ) {
-        assert!(upgrade.proposer == tx_context::sender(ctx), EInvalidProposerForMetadata);
+        assert!(upgrade.proposer == ctx.sender(), EInvalidProposerForMetadata);
         assert!(!df::exists_with_type<UpgradeMetadata, VecMap<string::String, string::String>>(&upgrade.id, UpgradeMetadata {}), EMetadataAlreadyExists);
         df::add(&mut upgrade.id, UpgradeMetadata {}, metadata_map);
     }
 
-    /// Share the upgrade object created by propose_upgrade_v2
+    /// Share the upgrade object created by create_upgrade
     public fun share_upgrade_object(
         upgrade: ProposedUpgrade
     ) {
@@ -304,14 +300,14 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             !vec_set::contains(&proposal.current_voters, &voter_id), 
             EAlreadyVoted,
         );
-        vec_set::insert(&mut proposal.current_voters, voter_id);
+        proposal.current_voters.insert(voter_id);
         voter.votes_issued = voter.votes_issued + 1;
 
         event::emit(UpgradeVoted {
             proposal: object::id(proposal),
             digest: proposal.digest,
             voter: voter_id,
-            signer: tx_context::sender(ctx),
+            signer: ctx.sender(),
         });
     }
 
@@ -329,7 +325,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
 
     public fun authorize_upgrade_and_cleanup(
         cap: &mut QuorumUpgradeCap,
-        proposal_obj: ProposedUpgrade, 
+        mut proposal_obj: ProposedUpgrade, 
         ctx: &TxContext,
     ): UpgradeTicket {
         let upgrade_ticket = authorize(cap, &mut proposal_obj, ctx);
@@ -365,7 +361,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             digest,
             current_voters: _,
         } = proposed_upgrade;
-        assert!(proposer == tx_context::sender(ctx), ESignerMismatch);
+        assert!(proposer == ctx.sender(), ESignerMismatch);
         event::emit(UpgradeDestroyed {
             upgrade_cap,
             proposal,
@@ -431,7 +427,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         let proposal_uid = object::new(ctx);
         let proposal_id = object::uid_to_inner(&proposal_uid);
         
-        let proposer = tx_context::sender(ctx);
+        let proposer = ctx.sender();
         
         event::emit(UpgradeProposed {
             upgrade_cap: cap_id,
@@ -458,13 +454,13 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     ): UpgradeTicket {
         assert!(proposal.upgrade_cap == object::id(cap), EInvalidProposalForUpgrade);
         assert!(
-            vec_set::size(&proposal.current_voters) >= cap.required_votes, 
+            proposal.current_voters.size() >= cap.required_votes, 
             ENotEnoughVotes,
         );
         assert!(proposal.proposer != @0x0, EAlreadyIssued);
 
         // assert the signer is the proposer and the upgrade has not happened yet
-        let signer = tx_context::sender(ctx);
+        let signer = ctx.sender();
         assert!(proposal.proposer == signer, ESignerMismatch);
         proposal.proposer = @0x0;
 
