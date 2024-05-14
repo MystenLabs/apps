@@ -3,6 +3,7 @@ name = "zk_bag"
 version = "1.0.0"
 # mainnet published-at
 published-at="0x5bb7d0bb3240011336ca9015f553b2646302a4f05f821160344e9ec5a988f740"
+edition = "2024.beta"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
