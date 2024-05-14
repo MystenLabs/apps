@@ -18,6 +18,7 @@ and defines the winner in an imaginary "fight".
 - [SuiFrens website](https://suifrens.com)
 - [SuiNS website](https://suins.io/)
 - [Documentation](https://docs.sui.io/)
+- [SuiNS Repository](https://github.com/MystenLabs/suins-contracts)
 
 ## License
 
