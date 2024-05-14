@@ -36,7 +36,6 @@ module zk_bag::zk_bag {
 
     /// A store that holds all the bags to prevent needing
     /// the objectId in the URL of requests.
-    /// Adds a throughput limit of 200TPS to the system.
     ///
     /// We can keep a unique address -> bag map, considering
     /// that addresses are ephemeral. They'll be randomly generated and be used once.
