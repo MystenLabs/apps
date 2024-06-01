@@ -44,7 +44,7 @@ module kiosk::floor_price_rule {
 
     /// Buyer action: Prove that the amount is higher or equal to the floor_price.
     public fun prove<T>(
-        policy: &mut TransferPolicy<T>,
+        policy: &TransferPolicy<T>,
         request: &mut TransferRequest<T>
     ) {
         let config: &Config = policy::get_rule(Rule {}, policy);
