@@ -13,9 +13,9 @@ module accessories::accessories {
     use suifrens::suifrens::{Self, AdminCap, SuiFren};
 
     /// Trying to remove an accessory that doesn't exist.
-    const EAccessoryTypeDoesNotExist: u64 = 0;
+    const EAccessoryaccessory_typeDoesNotExist: u64 = 0;
     /// Trying to add an accessory that already exists.
-    const EAccessoryTypeAlreadyExists: u64 = 1;
+    const EAccessoryaccessory_typeAlreadyExists: u64 = 1;
     /// An application is not authorized to mint.
     const ENotAuthorized: u64 = 2;
 
@@ -26,17 +26,17 @@ module accessories::accessories {
     struct Accessory has key, store {
         id: UID,
         name: String,
-        type: String
+        accessory_type: String
     }
 
     /// This struct represents where the accessory is going to be mounted
-    struct AccessoryKey has copy, store, drop { type: String }
+    struct AccessoryKey has copy, store, drop { accessory_type: String }
 
     /// The key for the `MintCap` store.
     struct MintCapKey has copy, store, drop {}
 
     /// A capability allowing to mint new accessories. Later can be replaced
-    /// by a better better solution. Not used anywhere in type signatures.
+    /// by a better better solution. Not used anywhere in accessory_type signatures.
     struct MintCap has store {}
 
     /// Module initializer. Uses One Time Witness to create Publisher and transfer it to sender
@@ -45,29 +45,29 @@ module accessories::accessories {
     }
 
     /// Mint a new Accessory; can only be called by authorized applications.
-    public fun mint(app: &mut UID, name: String, type: String, ctx: &mut TxContext): Accessory {
-        assert!(df::exists_with_type<MintCapKey, MintCap>(app, MintCapKey {}), ENotAuthorized);
+    public fun mint(app: &mut UID, name: String, accessory_type: String, ctx: &mut TxContext): Accessory {
+        assert!(df::exists_with_accessory_type<MintCapKey, MintCap>(app, MintCapKey {}), ENotAuthorized);
         Accessory {
             id: object::new(ctx),
             name,
-            type
+            accessory_type
         }
     }
 
-    /// Add accessory to the SuiFren. Stores the accessory under the `type` key
-    /// making it impossible to wear two accessories of the same type.
+    /// Add accessory to the SuiFren. Stores the accessory under the `accessory_type` key
+    /// making it impossible to wear two accessories of the same accessory_type.
     public fun add<T> (sf: &mut SuiFren<T>, accessory: Accessory) {
         let uid_mut = suifrens::uid_mut(sf);
-        assert!(!dof::exists_(uid_mut, AccessoryKey{ type: accessory.type }), EAccessoryTypeAlreadyExists);
-        dof::add(uid_mut, AccessoryKey{ type: accessory.type }, accessory)
+        assert!(!dof::exists_(uid_mut, AccessoryKey{ accessory_type: accessory.accessory_type }), EAccessoryaccessory_typeAlreadyExists);
+        dof::add(uid_mut, AccessoryKey{ accessory_type: accessory.accessory_type }, accessory)
     }
 
     /// Remove accessory from the SuiFren. Removes the accessory with the given
-    /// `type`. Aborts if the accessory is not found.
-    public fun remove<T> (sf: &mut SuiFren<T>, type: String): Accessory {
+    /// `accessory_type`. Aborts if the accessory is not found.
+    public fun remove<T> (sf: &mut SuiFren<T>, accessory_type: String): Accessory {
         let uid_mut = suifrens::uid_mut(sf);
-        assert!(dof::exists_(uid_mut, AccessoryKey { type }), EAccessoryTypeDoesNotExist);
-        dof::remove(uid_mut, AccessoryKey { type })
+        assert!(dof::exists_(uid_mut, AccessoryKey { accessory_type }), EAccessoryaccessory_typeDoesNotExist);
+        dof::remove(uid_mut, AccessoryKey { accessory_type })
     }
 
     // === Protected Functions ===
@@ -89,15 +89,15 @@ module accessories::accessories {
         accessory.name
     }
 
-    /// Accessor for the `type` field of the `Accessory`.
-    public fun type(accessory: &Accessory): String {
-        accessory.type
+    /// Accessor for the `accessory_type` field of the `Accessory`.
+    public fun accessory_type(accessory: &Accessory): String {
+        accessory.accessory_type
     }
 
     // === Functions for Testing ===
     #[test_only]
     public fun test_burn(accessory: Accessory) {
-        let Accessory { id, name: _, type: _ } = accessory;
+        let Accessory { id, name: _, accessory_type: _ } = accessory;
         object::delete(id);
     }
 }
