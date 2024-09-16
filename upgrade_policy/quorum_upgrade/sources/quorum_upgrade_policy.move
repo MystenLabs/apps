@@ -221,18 +221,18 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         let mut voter_idx = voter_addresses.length();
         while (voter_idx > 0) {
             voter_idx = voter_idx - 1;
-            let address = voter_addresses[voter_idx];
+            let voter_address = voter_addresses[voter_idx];
             let voter_uid = object::new(ctx);
             let voter_id = object::uid_to_inner(&voter_uid);
             transfer::transfer(
                 VotingCap {
                     id: voter_uid,
-                    owner: address,
+                    owner: voter_address,
                     upgrade_cap: cap_id,
                     transfers_count: 0,
                     votes_issued: 0,
                 },
-                address,
+                voter_address,
             );
             voter_caps.insert(voter_id);
         };
