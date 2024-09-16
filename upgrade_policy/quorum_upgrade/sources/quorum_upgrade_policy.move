@@ -3,50 +3,50 @@
 
 /// Simple upgrade policy that requires a `k` out of `n` quorum in order to perform
 /// a proposed upgrade.
-/// 
+///
 /// This policy is created with a call to `quorum_upgrade_policy::new` providing
-/// the `UpgradeCap` of the package to be controlled by the policy, the `k` value 
+/// the `UpgradeCap` of the package to be controlled by the policy, the `k` value
 /// (number of votes, quorum to be reached for the upgrade to be allowed) and the list of
 /// `address`es allowed to vote. The `address`es provided will receive
-/// a `VotingCap` that allows them to vote for a proposed upgrade. 
-/// This policy can be created at any point in time during the lifetime of the original 
+/// a `VotingCap` that allows them to vote for a proposed upgrade.
+/// This policy can be created at any point in time during the lifetime of the original
 /// package upgrade cap.
 /// The `QuorumUpgradeCap` received from the call to `quorum_upgrade_policy::new` will
 /// be used when proposing an upgrade and when authorizing that upgrade.
-/// Given that it is created with the original `UpgradeCap`, it is returned to the owner 
+/// Given that it is created with the original `UpgradeCap`, it is returned to the owner
 /// of that capability, typically the publisher of the original package.
 /// That impies the owner of the `UpgradeCap` is the only one that can propose and
 /// authorize upgrades.
 /// Considering that the `QuorumUpgradeCap` is both `key` and `store` the owner can decide
 /// on alternative ways to offer that capability to other parties.
 /// As expected, however, the capability should be reasonably protected and secured.
-/// 
+///
 /// An upgrade is proposed via `quorum_upgrade_policy::propose_upgrade` and saved as
 /// a shared object. As such it can be freely accessed. That instance will be used
 /// by both voters of the upgrade and the publisher of the upgrade.
-/// The proposer of an upgrade provides the digest of the upgrade that is saved with 
-/// the proposal. The idea is that the proposer will provide the compilable source code 
+/// The proposer of an upgrade provides the digest of the upgrade that is saved with
+/// the proposal. The idea is that the proposer will provide the compilable source code
 /// to all voters, which in turn will verify the digest and, thus, the source code.
-/// 
+///
 /// Voters can then vote for the upgrade via `quorum_upgrade_policy::vote` providing
-/// the `ProposedUpgrade` and their `VotingCap`. 
-/// 
+/// the `ProposedUpgrade` and their `VotingCap`.
+///
 /// Once the quorum is reached the proposer can authorize the upgrade. An attempt to
 /// authourize an upgrade before the quorum is reached will fail.
-/// 
+///
 /// Events are emitted to track the main operations on the proposal.
 /// A proposed upgrade lifetime is tracked via the 4 events:
 /// `UpgradeProposed`, `UpgradeVoted` and `UpgradePerformed` or `UpgradeDestroyed`.
-/// 
+///
 /// Multiple upgrades can be live at the same time. That is not the expected behavior
 /// but there are no restrictions to the number of upgrades open at any point in time.
 /// When that happens the first upgrade executed "wins" and subsequent attempt to
 /// authorize an upgrade will fail as the version will not match any longer.
-/// 
+///
 /// Notice:
 /// there are several upgrades to this policy that will be provided shortly and will
 /// help with the management of the policy:
-/// - the ability to restrict the upgrade as with normal packages (e.g. additive only, 
+/// - the ability to restrict the upgrade as with normal packages (e.g. additive only,
 /// dependency only or immutable) and whether to do that via voting or not is being
 /// discussed
 /// - the ability to transfer `VotingCap` instances to other addresses will likely
@@ -63,7 +63,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     use sui::vec_map::{VecMap};
     use std::string;
 
-    /// The capability controlling the upgrade. 
+    /// The capability controlling the upgrade.
     /// Initialized with `new` is returned to the caller to be stored as desired.
     /// From this point on every upgrade is performed via this policy.
     public struct QuorumUpgradeCap has key, store {
@@ -80,14 +80,14 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
 
     /// Capability to vote an upgrade.
     /// Sent to each registered address when a new upgrade is created.
-    /// Receiving parties will use the capability to vote for the upgrade. 
+    /// Receiving parties will use the capability to vote for the upgrade.
     public struct VotingCap has key {
         id: UID,
         /// The original address the capability was sent to.
         owner: address,
         /// The ID of the `QuorumUpgradeCap` this capability refers to.
         upgrade_cap: ID,
-        /// The count of transfers this capability went through. 
+        /// The count of transfers this capability went through.
         /// It is informational only and can be used to track transfers of
         /// voter capability instances.
         transfers_count: u64,
@@ -96,9 +96,9 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// A proposed upgrade that is going through voting.
-    /// `ProposedUpgrade` instances are shared objects that will be passed as 
+    /// `ProposedUpgrade` instances are shared objects that will be passed as
     /// an argument, together with a `VotingCap`, when voting.
-    /// It's possible to have multiple proposed upgrades at the same time and 
+    /// It's possible to have multiple proposed upgrades at the same time and
     /// the first successful upgrade will obsolete all the others, given
     /// an attempt to upgrade with a "concurrent" one will fail because of
     /// versioning.
@@ -107,7 +107,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         /// The ID of the `QuorumUpgradeCap` that this vote was initiated from.
         upgrade_cap: ID,
         /// The address requesting permission to perform the upgrade.
-        /// This is the sender of the transaction that proposes and 
+        /// This is the sender of the transaction that proposes and
         /// performs the upgrade.
         proposer: address,
         /// The digest of the bytecode that the package will be upgraded to.
@@ -116,7 +116,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         current_voters: VecSet<ID>,
     }
 
-    // 
+    //
     // Events to track history and progress of upgrades
     //
 
@@ -195,7 +195,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     const EMetadataAlreadyExists: u64 = 9;
 
     /// Create a `QuorumUpgradeCap` given an `UpgradeCap`.
-    /// The returned instance is the only and exclusive controller of upgrades. 
+    /// The returned instance is the only and exclusive controller of upgrades.
     /// The `k` (`required_votes`) out of `n` (length of `voters`) is set up
     /// at construction time and it is immutable.
     /// The `voters` will receive a `VotingCap` that allows them to vote.
@@ -246,10 +246,11 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         }
     }
 
-    /// Propose an upgrade. 
+    /// Propose an upgrade.
     /// The `digest` of the proposed upgrade is provided to identify the upgrade.
     /// The proposer is the sender of the transaction and must be the signer
     /// of the commit transaction as well.
+    #[allow(lint(share_owned))]
     public fun propose_upgrade(
         cap: &QuorumUpgradeCap,
         digest: vector<u8>,
@@ -280,6 +281,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     }
 
     /// Share the upgrade object created by create_upgrade
+    #[allow(lint(share_owned))]
     public fun share_upgrade_object(
         upgrade: ProposedUpgrade
     ) {
@@ -289,7 +291,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// Vote in favor of an upgrade, aborts if the voter is not for the proposed
     /// upgrade or if they voted already, or if the upgrade was already performed.
     public fun vote(
-        proposal: &mut ProposedUpgrade, 
+        proposal: &mut ProposedUpgrade,
         voter: &mut VotingCap,
         ctx: &TxContext,
     ) {
@@ -297,7 +299,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         assert!(proposal.upgrade_cap == voter.upgrade_cap, EInvalidVoterForUpgrade);
         let voter_id = object::id(voter);
         assert!(
-            !vec_set::contains(&proposal.current_voters, &voter_id), 
+            !vec_set::contains(&proposal.current_voters, &voter_id),
             EAlreadyVoted,
         );
         proposal.current_voters.insert(voter_id);
@@ -311,13 +313,13 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         });
     }
 
-    /// Issue an `UpgradeTicket` for the upgrade being voted on. Aborts if 
+    /// Issue an `UpgradeTicket` for the upgrade being voted on. Aborts if
     /// there are not enough votes yet, or if the upgrade was already performed.
     /// The signer of the transaction must be the same as the one proposing the
     /// upgrade.
     public fun authorize_upgrade(
         cap: &mut QuorumUpgradeCap,
-        proposal: &mut ProposedUpgrade, 
+        proposal: &mut ProposedUpgrade,
         ctx: &TxContext,
     ): UpgradeTicket {
         authorize(cap, proposal, ctx)
@@ -325,7 +327,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
 
     public fun authorize_upgrade_and_cleanup(
         cap: &mut QuorumUpgradeCap,
-        mut proposal_obj: ProposedUpgrade, 
+        mut proposal_obj: ProposedUpgrade,
         ctx: &TxContext,
     ): UpgradeTicket {
         let upgrade_ticket = authorize(cap, &mut proposal_obj, ctx);
@@ -343,7 +345,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
 
     /// Finalize the upgrade to produce the given receipt.
     public fun commit_upgrade(
-        cap: &mut QuorumUpgradeCap, 
+        cap: &mut QuorumUpgradeCap,
         receipt: UpgradeReceipt,
     ) {
         package::commit_upgrade(&mut cap.upgrade_cap, receipt)
@@ -395,7 +397,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         proposal.upgrade_cap
     }
 
-    /// Get the upgrade proposer. 
+    /// Get the upgrade proposer.
     public fun proposer(proposal: &ProposedUpgrade): address {
         proposal.proposer
     }
@@ -426,9 +428,9 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         let cap_id = object::id(cap);
         let proposal_uid = object::new(ctx);
         let proposal_id = object::uid_to_inner(&proposal_uid);
-        
+
         let proposer = ctx.sender();
-        
+
         event::emit(UpgradeProposed {
             upgrade_cap: cap_id,
             proposal: proposal_id,
@@ -449,12 +451,12 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
     /// authorize upgrade helper function
     fun authorize(
         cap: &mut QuorumUpgradeCap,
-        proposal: &mut ProposedUpgrade, 
+        proposal: &mut ProposedUpgrade,
         ctx: &TxContext,
     ): UpgradeTicket {
         assert!(proposal.upgrade_cap == object::id(cap), EInvalidProposalForUpgrade);
         assert!(
-            proposal.current_voters.size() >= cap.required_votes, 
+            proposal.current_voters.size() >= cap.required_votes,
             ENotEnoughVotes,
         );
         assert!(proposal.proposer != @0x0, EAlreadyIssued);
