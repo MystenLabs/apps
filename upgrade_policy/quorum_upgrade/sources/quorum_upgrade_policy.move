@@ -299,7 +299,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         assert!(proposal.upgrade_cap == voter.upgrade_cap, EInvalidVoterForUpgrade);
         let voter_id = object::id(voter);
         assert!(
-            !vec_set::contains(&proposal.current_voters, &voter_id),
+            !proposal.current_voters.contains(&voter_id),
             EAlreadyVoted,
         );
         proposal.current_voters.insert(voter_id);
