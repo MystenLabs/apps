@@ -81,7 +81,7 @@ export const convertObjectToQuorumUpgradeObject = (
 
 export const UPGRADE_POLICY_PACKAGE_ADDRESS: Record<string, string> = {
 	testnet: '0x9722f37d05ba8dd7295e0828edf00849aea17411e76abc3f544ad22069cae733',
-	mainnet: '0xae627358027f3b53865d2403ecf5573c91d543a387d653764b650b8f85a2235c0',
+	mainnet: '0xae627358027f3b53865d2403ecf5573c91d543a387d653764b650b8f85a2235c',
 };
 
 /// Construct a VecSet of addresses.
