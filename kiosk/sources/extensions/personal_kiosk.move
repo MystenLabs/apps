@@ -51,12 +51,29 @@ module kiosk::personal_kiosk {
     public fun new(
         kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext
     ): PersonalKioskCap {
+        create(kiosk, cap, sender(ctx), ctx)
+    }
+
+    /// Create a `PersonalKiosk` for `recipient`.
+    /// This is useful when (e.g.) an admin account wants to mint an asset with
+    /// royalty enforcement on behalf of a user.
+    public fun create_for(
+        kiosk: &mut Kiosk, cap: KioskOwnerCap, recipient: address, ctx: &mut TxContext
+    ) {
+        let personal_owner_cap = create(kiosk, cap, recipient, ctx);
+        transfer::transfer(personal_owner_cap, recipient)
+    }
+
+    /// Wrap the KioskOwnerCap making the Kiosk "owned" and non-transferable.
+    /// The `PersonalKioskCap` is returned to allow chaining within a PTB, but
+    /// the value must be consumed by the `transfer_to_sender` call in any case.
+    fun create(
+	kiosk: &mut Kiosk, cap: KioskOwnerCap, owner: address, ctx: &mut TxContext
+    ): PersonalKioskCap {
         assert!(kiosk::has_access(kiosk, &cap), EWrongKiosk);
 
-        let owner = sender(ctx);
-
         // set the owner property of the Kiosk
-        kiosk::set_owner(kiosk, &cap, ctx);
+        kiosk::set_owner_custom(kiosk, &cap, owner);
 
         // add the owner marker to the Kiosk; uses `_as_owner` to always pass,
         // even if Kiosk "allow_extensions" is set to false
