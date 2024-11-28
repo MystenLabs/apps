@@ -45,14 +45,8 @@ public struct BagCreatedEvent has copy, drop {
 /// Event emitted when an item of type T is added to a ZkBag
 public struct BagItemAddedEvent<phantom T> has copy, drop {
     bag_id: ID,
+    item_id: ID,
     creator: address,
-}
-
-/// Event emitted when an item of type T is claimed from a ZkBag
-public struct BagItemClaimedEvent<phantom T> has copy, drop {
-    bag_id: ID,
-    creator: address,
-    receiver: address,
 }
 
 /// Event emitted when all items in a ZkBag are claimed
@@ -69,10 +63,6 @@ public struct BagOwnerUpdatedEvent has copy, drop {
     new_owner: address,
 }
 
-/// Event emitted when a ZkBag is destroyed after all items are claimed
-public struct BagDestroyedEvent has copy, drop {
-    bag_id: ID,
-}
 
 /// A store that holds all the bags to prevent needing
 /// the objectId in the URL of requests.
@@ -151,6 +141,7 @@ public fun add<T: key + store>(
 
     event::emit(BagItemAddedEvent<T> {
         bag_id: object::id(bag),
+        item_id: object::id(&item),
         creator: ctx.sender(),
     });
 
@@ -250,12 +241,6 @@ public fun claim<T: key + store>(
 
     bag.item_ids.remove(&object::id_address(&item));
 
-    event::emit(BagItemClaimedEvent<T> {
-        bag_id: object::id(bag),
-        creator: bag.owner,
-        receiver: ctx.sender(),
-    });
-
     item
 }
 
@@ -265,10 +250,6 @@ public fun finalize(bag: ZkBag, claim: BagClaim) {
     assert!(bag.item_ids.is_empty(), EBagNotEmpty);
 
     let BagClaim { bag_id: _ } = claim;
-
-    event::emit(BagDestroyedEvent {
-        bag_id: object::id(&bag),
-    });
 
     let ZkBag {
         id,
