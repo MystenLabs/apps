@@ -13,6 +13,7 @@ module zk_bag::zk_bag;
 use sui::table::{Self, Table};
 use sui::transfer::Receiving;
 use sui::vec_set::{Self, VecSet};
+use sui::event::{Self};
 
 /// Capping this at 50 items as a limit based on business requirements.
 /// WARNING: DO NOT EXCEED THE MAXIMUM INPUTs IN A PTB LIMIT,
@@ -35,26 +36,42 @@ const EClaimAddressNotExists: u64 = 6;
 const EItemNotExists: u64 = 7;
 
 
-public struct BagCreatedEvent {
-    bag_id: UID,
+/// Event emitted when a new ZkBag is created
+public struct BagCreatedEvent has copy, drop {
+    bag_id: ID,
     creator: address,
 }
 
-public struct BagItemAddedEvent<T> {
-    bag_id: UID,
+/// Event emitted when an item of type T is added to a ZkBag
+public struct BagItemAddedEvent<phantom T> has copy, drop {
+    bag_id: ID,
     creator: address,
 }
 
-public struct BagItemClaimedEvent<T> {
-    bag_id: UID,
-    creator: address,
-    receiver: address,
-}
-
-public struct BagClaimedEvent {
+/// Event emitted when an item of type T is claimed from a ZkBag
+public struct BagItemClaimedEvent<phantom T> has copy, drop {
     bag_id: ID,
     creator: address,
     receiver: address,
+}
+
+/// Event emitted when all items in a ZkBag are claimed
+public struct BagClaimedEvent has copy, drop {
+    bag_id: ID,
+    creator: address,
+    receiver: address,
+}
+
+/// Event emitted when ownership of a ZkBag is transferred to a new address
+public struct BagOwnerUpdatedEvent has copy, drop {
+    bag_id: ID,
+    old_owner: address,
+    new_owner: address,
+}
+
+/// Event emitted when a ZkBag is destroyed after all items are claimed
+public struct BagDestroyedEvent has copy, drop {
+    bag_id: ID,
 }
 
 /// A store that holds all the bags to prevent needing
@@ -92,15 +109,22 @@ fun init(ctx: &mut TxContext) {
 public fun new(store: &mut BagStore, receiver: address, ctx: &mut TxContext) {
     assert!(!store.items.contains(receiver), EClaimAddressAlreadyExists);
 
+    let zk_bag = ZkBag {
+        id: object::new(ctx),
+        owner: ctx.sender(),
+        item_ids: vec_set::empty(),
+    };
+    
+    event::emit(BagCreatedEvent {
+        bag_id: object::id(&zk_bag),
+        creator: ctx.sender(),
+    });
+
     store
         .items
         .add(
             receiver,
-            ZkBag {
-                id: object::new(ctx),
-                owner: ctx.sender(),
-                item_ids: vec_set::empty(),
-            },
+            zk_bag,
         );
 }
 
@@ -125,6 +149,11 @@ public fun add<T: key + store>(
     // all items in a single-go.
     bag.item_ids.insert(object::id_address(&item));
 
+    event::emit(BagItemAddedEvent<T> {
+        bag_id: object::id(bag),
+        creator: ctx.sender(),
+    });
+
     // TTO (Transfer to Object) the item to the bag.
     transfer::public_transfer(item, object::id_address(bag));
 }
@@ -142,6 +171,12 @@ public fun init_claim(
     let claim_proof = BagClaim {
         bag_id: object::id(&bag),
     };
+
+    event::emit(BagClaimedEvent {
+        bag_id: object::id(&bag),
+        creator: bag.owner,
+        receiver: receiver,
+    });
 
     (bag, claim_proof)
 }
@@ -161,6 +196,12 @@ public fun reclaim(
         bag_id: bag.id.to_inner(),
     };
 
+    event::emit(BagClaimedEvent {
+        bag_id: bag.id.to_inner(),
+        creator: bag.owner,
+        receiver: receiver,
+    });
+
     (bag, claim_proof)
 }
 
@@ -177,6 +218,12 @@ public fun update_receiver(
     let bag = store.items.remove(from);
     // validate that the sender is the owner of the bag.
     assert!(bag.owner == ctx.sender(), EUnauthorized);
+    
+    event::emit(BagOwnerUpdatedEvent {
+        bag_id: object::id(&bag),
+        old_owner: from,
+        new_owner: to,
+    });
 
     store.items.add(to, bag);
 }
@@ -188,6 +235,7 @@ public fun claim<T: key + store>(
     bag: &mut ZkBag,
     claim: &BagClaim,
     receiving: Receiving<T>,
+    ctx: &mut TxContext,
 ): T {
     assert!(bag.is_valid_claim_object(claim), EUnauthorizedProof);
 
@@ -202,6 +250,12 @@ public fun claim<T: key + store>(
 
     bag.item_ids.remove(&object::id_address(&item));
 
+    event::emit(BagItemClaimedEvent<T> {
+        bag_id: object::id(bag),
+        creator: bag.owner,
+        receiver: ctx.sender(),
+    });
+
     item
 }
 
@@ -211,6 +265,10 @@ public fun finalize(bag: ZkBag, claim: BagClaim) {
     assert!(bag.item_ids.is_empty(), EBagNotEmpty);
 
     let BagClaim { bag_id: _ } = claim;
+
+    event::emit(BagDestroyedEvent {
+        bag_id: object::id(&bag),
+    });
 
     let ZkBag {
         id,
