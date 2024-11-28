@@ -34,6 +34,29 @@ const EClaimAddressNotExists: u64 = 6;
 /// Claims an item that does not exist.
 const EItemNotExists: u64 = 7;
 
+
+public struct BagCreatedEvent {
+    bag_id: UID,
+    creator: address,
+}
+
+public struct BagItemAddedEvent<T> {
+    bag_id: UID,
+    creator: address,
+}
+
+public struct BagItemClaimedEvent<T> {
+    bag_id: UID,
+    creator: address,
+    receiver: address,
+}
+
+public struct BagClaimedEvent {
+    bag_id: ID,
+    creator: address,
+    receiver: address,
+}
+
 /// A store that holds all the bags to prevent needing
 /// the objectId in the URL of requests.
 ///
