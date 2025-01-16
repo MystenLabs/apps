@@ -1,6 +1,7 @@
 module quorum_upgrade_policy::add_voter;
 
-use quorum_upgrade_policy::quorum_upgrade_policy_v2::{Proposal, QuorumUpgrade};
+use quorum_upgrade_policy::proposal::Proposal;
+use quorum_upgrade_policy::quorum_upgrade_v2::QuorumUpgrade;
 
 public struct AddVoter has copy, drop {
     voter: address,
@@ -12,8 +13,7 @@ public fun new(voter: address, new_required_votes: u64): AddVoter {
     AddVoter { voter, new_required_votes }
 }
 
-public fun execute(proposal: &Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgrade) {
-    assert!(proposal.quorum_reached(quorum_upgrade));
+public fun execute(proposal: Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgrade) {
     assert!(!quorum_upgrade.voters().contains(&proposal.data().voter));
 
     let AddVoter {
@@ -23,5 +23,5 @@ public fun execute(proposal: &Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpg
 
     quorum_upgrade.add_voter(voter, new_required_votes);
 
-    // delete proposal
+    proposal.execute(quorum_upgrade)
 }
