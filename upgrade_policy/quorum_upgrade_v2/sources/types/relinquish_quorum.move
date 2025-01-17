@@ -1,9 +1,12 @@
-module quorum_upgrade_policy::relinquish_quorum;
+// Copyright (c) Mysten Labs, Inc.
+// SPDX-License-Identifier: Apache-2.0
 
-use quorum_upgrade_policy::proposal::Proposal;
-use quorum_upgrade_policy::quorum_upgrade_v2::QuorumUpgrade;
+module quorum_upgrade_v2::relinquish_quorum;
 
-public struct RelinquishQuorum has copy, drop {
+use quorum_upgrade_v2::proposal::Proposal;
+use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
+
+public struct RelinquishQuorum has drop {
     new_owner: address,
 }
 
@@ -17,7 +20,7 @@ public fun execute(proposal: Proposal<RelinquishQuorum>, quorum_upgrade: QuorumU
         new_owner,
     } = proposal.data();
 
-    quorum_upgrade.relinquish_quorum(new_owner);
+    quorum_upgrade.relinquish_quorum(*new_owner);
 
     proposal.delete();
 }

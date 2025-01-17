@@ -56,7 +56,7 @@
 /// - the creation and usage of a `Ballot` to vote for the upgrade is also being
 /// discussed. The ballot will be transferable and an easy way to relate to a proposal
 module quorum_upgrade_policy::quorum_upgrade_policy {
-    use quorum_upgrade_policy::quorum_upgrade_v2;
+    use quorum_upgrade_v2::quorum_upgrade;
     use sui::event;
     use sui::package::{Self, UpgradeCap, UpgradeTicket, UpgradeReceipt};
     use sui::vec_set::{Self, VecSet};
@@ -247,7 +247,6 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         }
     }
 
-    
     public fun migrate_quorum_to_v2(cap: QuorumUpgradeCap, ctx: &mut TxContext) {
         let QuorumUpgradeCap {
             id,
@@ -256,7 +255,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
             voters,
             voter_caps: _voter_caps,
         } = cap;
-        quorum_upgrade_policy_v2::new(upgrade_cap, required_votes, voters, ctx);
+        quorum_upgrade::new(upgrade_cap, required_votes, voters, ctx);
         id.delete();
     }
 
