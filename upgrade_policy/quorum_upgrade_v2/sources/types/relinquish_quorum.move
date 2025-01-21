@@ -6,7 +6,7 @@ module quorum_upgrade_v2::relinquish_quorum;
 use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
-public struct RelinquishQuorum has drop {
+public struct RelinquishQuorum has store, drop {
     new_owner: address,
 }
 

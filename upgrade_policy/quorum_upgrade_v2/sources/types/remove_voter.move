@@ -6,25 +6,32 @@ module quorum_upgrade_v2::remove_voter;
 use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
-public struct RemoveVoter {
+public struct RemoveVoter has store, drop {
     voter: address,
     new_required_votes: u64,
 }
+
+// ~~~~~~~ Errors ~~~~~~~
+#[error]
+const EInvalidVoter: vector<u8> = b"Voter does not exist in the quorum";
+#[error]
+const ERequiredVotesZero: vector<u8> = b"Required votes must be greater than 0";
+#[error]
+const EInvalidRequiredVotes: vector<u8> =
+    b"Required votes must be less than or equal to the number of voters";
 
 public fun new(
     quorum_upgrade: &QuorumUpgrade,
     voter: address,
     new_required_votes: u64,
 ): RemoveVoter {
-    assert!(quorum_upgrade.voters().contains(&voter));
-    assert!(new_required_votes >= quorum_upgrade.voters().size() - 1);
+    assert!(quorum_upgrade.voters().contains(&voter), EInvalidVoter);
+    assert!(new_required_votes > 0, ERequiredVotesZero);
+    assert!(new_required_votes <= quorum_upgrade.voters().size() as u64 - 1, EInvalidRequiredVotes);
     RemoveVoter { voter, new_required_votes }
 }
 
 public fun execute(proposal: Proposal<RemoveVoter>, quorum_upgrade: &mut QuorumUpgrade) {
-    assert!(quorum_upgrade.voters().contains(&proposal.data().voter));
-    assert!(quorum_upgrade.voters().size() - 1 >= quorum_upgrade.required_votes());
-
     let RemoveVoter {
         voter,
         new_required_votes,

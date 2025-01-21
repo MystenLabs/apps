@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #[test_only]
-module quorum_upgrade_v2::add_voter_proposal_test;
+module quorum_upgrade_v2::remove_voter_proposal_tests;
 
-use quorum_upgrade_v2::add_voter::{Self, AddVoter};
 use quorum_upgrade_v2::proposal::{Self, Proposal};
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
+use quorum_upgrade_v2::remove_voter::{Self, RemoveVoter};
 use sui::test_scenario;
 
 #[test]
-fun add_voter_proposal() {
+fun remove_voter_proposal() {
     new_quorum_upgrade();
 
-    let (voter1, voter2, voter3, new_voter) = (@0x1, @0x2, @0x3, @0x4);
+    let (voter1, voter2, voter3) = (@0x1, @0x2, @0x3);
     let mut quorum_upgrade;
     let mut proposal;
 
@@ -25,13 +25,13 @@ fun add_voter_proposal() {
 
     scenario.next_tx(voter1);
     {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+        let remove_voter_proposal = remove_voter::new(&quorum_upgrade, voter3, 2);
+        proposal::new(&quorum_upgrade, remove_voter_proposal, scenario.ctx());
     };
 
     scenario.next_tx(voter1);
     {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
+        proposal = scenario.take_shared<Proposal<RemoveVoter>>();
         assert!(proposal.votes().size() == 1);
         assert!(proposal.votes().contains(&voter1));
     };
@@ -43,23 +43,43 @@ fun add_voter_proposal() {
         assert!(proposal.votes().contains(&voter2));
     };
 
-    scenario.next_tx(voter3);
+    scenario.next_tx(voter1);
     {
-        add_voter::execute(proposal, &mut quorum_upgrade);
-        assert!(quorum_upgrade.voters().size() == 4);
-        assert!(quorum_upgrade.voters().contains(&new_voter));
+        remove_voter::execute(proposal, &mut quorum_upgrade);
+        assert!(quorum_upgrade.voters().size() == 2);
+        assert!(!quorum_upgrade.voters().contains(&voter3));
     };
-
-    assert!(quorum_upgrade.voters().size() == 4);
-    assert!(quorum_upgrade.voters().contains(&new_voter));
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
 }
 
 #[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidNewVoter)]
-fun invalid_new_voter() {
+#[expected_failure(abort_code = ::quorum_upgrade_v2::remove_voter::EInvalidVoter)]
+fun invalid_voter() {
+    new_quorum_upgrade();
+
+    let (voter1, new_voter) = (@0x1, @0x4);
+    let quorum_upgrade;
+
+    let mut scenario = test_scenario::begin(voter1);
+    {
+        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    };
+
+    scenario.next_tx(voter1);
+    {
+        // Try remove voter not in quorum
+        remove_voter::new(&quorum_upgrade, new_voter, 1);
+    };
+
+    transfer::public_share_object(quorum_upgrade);
+    scenario.end();
+}
+
+#[test]
+#[expected_failure(abort_code = ::quorum_upgrade_v2::remove_voter::ERequiredVotesZero)]
+fun invalid_zero_required_votes() {
     new_quorum_upgrade();
 
     let (voter1, voter3) = (@0x1, @0x3);
@@ -72,31 +92,8 @@ fun invalid_new_voter() {
 
     scenario.next_tx(voter1);
     {
-        // Try and add a voter already in quorum
-        add_voter::new(&quorum_upgrade, voter3, 3);
-    };
-
-    transfer::public_share_object(quorum_upgrade);
-    scenario.end();
-}
-
-#[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::ERequiredVotesZero)]
-fun invalid_zero_required_votes() {
-    new_quorum_upgrade();
-
-    let (voter1, new_voter) = (@0x1, @0x4);
-    let quorum_upgrade;
-
-    let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
-
-    scenario.next_tx(voter1);
-    {
         // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 0);
+        remove_voter::new(&quorum_upgrade, voter3, 0);
     };
 
     transfer::public_share_object(quorum_upgrade);
@@ -104,11 +101,11 @@ fun invalid_zero_required_votes() {
 }
 
 #[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidRequiredVotes)]
+#[expected_failure(abort_code = ::quorum_upgrade_v2::remove_voter::EInvalidRequiredVotes)]
 fun invalid_required_votes() {
     new_quorum_upgrade();
 
-    let (voter1, new_voter) = (@0x1, @0x4);
+    let (voter1, voter3) = (@0x1, @0x3);
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
@@ -119,7 +116,7 @@ fun invalid_required_votes() {
     scenario.next_tx(voter1);
     {
         // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 5);
+        remove_voter::new(&quorum_upgrade, voter3, 5);
     };
 
     transfer::public_share_object(quorum_upgrade);

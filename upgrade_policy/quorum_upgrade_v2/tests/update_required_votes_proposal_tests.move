@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #[test_only]
-module quorum_upgrade_v2::add_voter_proposal_test;
+module quorum_upgrade_v2::update_required_votes_proposal_tests;
 
-use quorum_upgrade_v2::add_voter::{Self, AddVoter};
 use quorum_upgrade_v2::proposal::{Self, Proposal};
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
+use quorum_upgrade_v2::update_required_votes::{Self, UpdateRequiredVotes};
 use sui::test_scenario;
 
 #[test]
-fun add_voter_proposal() {
+fun update_required_votes_proposal() {
     new_quorum_upgrade();
 
-    let (voter1, voter2, voter3, new_voter) = (@0x1, @0x2, @0x3, @0x4);
+    let (voter1, voter2, voter3) = (@0x1, @0x2, @0x3);
     let mut quorum_upgrade;
     let mut proposal;
 
@@ -25,13 +25,16 @@ fun add_voter_proposal() {
 
     scenario.next_tx(voter1);
     {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+        let update_required_votes_proposal = update_required_votes::new(
+            &quorum_upgrade,
+            3,
+        );
+        proposal::new(&quorum_upgrade, update_required_votes_proposal, scenario.ctx());
     };
 
     scenario.next_tx(voter1);
     {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
+        proposal = scenario.take_shared<Proposal<UpdateRequiredVotes>>();
         assert!(proposal.votes().size() == 1);
         assert!(proposal.votes().contains(&voter1));
     };
@@ -45,35 +48,9 @@ fun add_voter_proposal() {
 
     scenario.next_tx(voter3);
     {
-        add_voter::execute(proposal, &mut quorum_upgrade);
-        assert!(quorum_upgrade.voters().size() == 4);
-        assert!(quorum_upgrade.voters().contains(&new_voter));
-    };
-
-    assert!(quorum_upgrade.voters().size() == 4);
-    assert!(quorum_upgrade.voters().contains(&new_voter));
-
-    transfer::public_share_object(quorum_upgrade);
-    scenario.end();
-}
-
-#[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidNewVoter)]
-fun invalid_new_voter() {
-    new_quorum_upgrade();
-
-    let (voter1, voter3) = (@0x1, @0x3);
-    let quorum_upgrade;
-
-    let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
-
-    scenario.next_tx(voter1);
-    {
-        // Try and add a voter already in quorum
-        add_voter::new(&quorum_upgrade, voter3, 3);
+        update_required_votes::execute(proposal, &mut quorum_upgrade);
+        assert!(quorum_upgrade.voters().size() == 3);
+        assert!(quorum_upgrade.required_votes() == 3);
     };
 
     transfer::public_share_object(quorum_upgrade);
@@ -81,11 +58,11 @@ fun invalid_new_voter() {
 }
 
 #[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::ERequiredVotesZero)]
+#[expected_failure(abort_code = ::quorum_upgrade_v2::update_required_votes::ERequiredVotesZero)]
 fun invalid_zero_required_votes() {
     new_quorum_upgrade();
 
-    let (voter1, new_voter) = (@0x1, @0x4);
+    let (voter1) = (@0x1);
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
@@ -96,7 +73,7 @@ fun invalid_zero_required_votes() {
     scenario.next_tx(voter1);
     {
         // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 0);
+        update_required_votes::new(&quorum_upgrade, 0);
     };
 
     transfer::public_share_object(quorum_upgrade);
@@ -104,11 +81,11 @@ fun invalid_zero_required_votes() {
 }
 
 #[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidRequiredVotes)]
+#[expected_failure(abort_code = ::quorum_upgrade_v2::update_required_votes::EInvalidRequiredVotes)]
 fun invalid_required_votes() {
     new_quorum_upgrade();
 
-    let (voter1, new_voter) = (@0x1, @0x4);
+    let (voter1) = (@0x1);
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
@@ -119,7 +96,7 @@ fun invalid_required_votes() {
     scenario.next_tx(voter1);
     {
         // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 5);
+        update_required_votes::new(&quorum_upgrade, 5);
     };
 
     transfer::public_share_object(quorum_upgrade);

@@ -7,7 +7,7 @@ use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 use sui::package::UpgradeTicket;
 
-public struct Upgrade {
+public struct Upgrade has store, drop {
     digest: vector<u8>,
 }
 

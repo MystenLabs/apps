@@ -11,10 +11,146 @@ use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
 use sui::test_scenario;
 
 #[test]
-fun new_proposal() {}
+#[expected_failure(abort_code = ::quorum_upgrade_v2::proposal::EUnauthorizedCaller)]
+fun invalid_new_proposal() {
+    new_quorum_upgrade();
+
+    let (voter1, new_voter) = (@0x1, @0x4);
+    let quorum_upgrade;
+
+    let mut scenario = test_scenario::begin(voter1);
+    {
+        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    };
+
+    scenario.next_tx(new_voter);
+    {
+        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
+        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+    };
+
+    transfer::public_share_object(quorum_upgrade);
+    scenario.end();
+}
 
 #[test]
-fun invalid_new_proposal() {}
+fun vote() {
+    new_quorum_upgrade();
+
+    let (voter1, voter2, voter3, new_voter) = (@0x1, @0x2, @0x3, @0x4);
+    let quorum_upgrade;
+    let mut proposal;
+
+    let mut scenario = test_scenario::begin(voter1);
+    {
+        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    };
+
+    scenario.next_tx(voter1);
+    {
+        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
+        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+    };
+
+    scenario.next_tx(voter1);
+    {
+        proposal = scenario.take_shared<Proposal<AddVoter>>();
+        assert!(proposal.votes().size() == 1);
+        assert!(proposal.votes().contains(&voter1));
+    };
+
+    scenario.next_tx(voter2);
+    {
+        proposal.vote(scenario.ctx());
+        assert!(proposal.votes().size() == 2);
+        assert!(proposal.votes().contains(&voter2));
+    };
+
+    scenario.next_tx(voter3);
+    {
+        proposal.vote(scenario.ctx());
+        assert!(proposal.votes().size() == 3);
+        assert!(proposal.votes().contains(&voter3));
+    };
+
+    transfer::public_share_object(quorum_upgrade);
+    transfer::public_share_object(proposal);
+    scenario.end();
+}
 
 #[test]
-fun vote_proposal() {}
+fun quorum_reached() {
+    new_quorum_upgrade();
+
+    let (voter1, voter2, new_voter) = (@0x1, @0x2, @0x4);
+    let quorum_upgrade;
+    let mut proposal;
+
+    let mut scenario = test_scenario::begin(voter1);
+    {
+        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    };
+
+    scenario.next_tx(voter1);
+    {
+        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
+        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+    };
+
+    scenario.next_tx(voter1);
+    {
+        proposal = scenario.take_shared<Proposal<AddVoter>>();
+        assert!(proposal.votes().size() == 1);
+        assert!(proposal.votes().contains(&voter1));
+    };
+
+    assert!(!proposal.quorum_reached(&quorum_upgrade));
+
+    scenario.next_tx(voter2);
+    {
+        proposal.vote(scenario.ctx());
+        assert!(proposal.votes().size() == 2);
+        assert!(proposal.votes().contains(&voter2));
+    };
+
+    assert!(proposal.quorum_reached(&quorum_upgrade));
+
+    transfer::public_share_object(quorum_upgrade);
+    transfer::public_share_object(proposal);
+    scenario.end();
+}
+
+#[test]
+fun delete_proposal_by_creator() {
+    new_quorum_upgrade();
+
+    let (voter1, new_voter) = (@0x1, @0x4);
+    let quorum_upgrade;
+    let proposal;
+
+    let mut scenario = test_scenario::begin(voter1);
+    {
+        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    };
+
+    scenario.next_tx(voter1);
+    {
+        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
+        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
+    };
+
+    scenario.next_tx(voter1);
+    {
+        proposal = scenario.take_shared<Proposal<AddVoter>>();
+        assert!(proposal.votes().size() == 1);
+        assert!(proposal.votes().contains(&voter1));
+    };
+
+    scenario.next_tx(voter1);
+    {
+        proposal.delete_proposal_by_creator(scenario.ctx());
+    };
+
+    transfer::public_share_object(quorum_upgrade);
+    scenario.end();
+}

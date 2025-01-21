@@ -3,8 +3,8 @@
 
 module quorum_upgrade_v2::proposal;
 
+use quorum_upgrade_v2::events;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
-use sui::event;
 use sui::vec_set::{Self, VecSet};
 
 // ~~~~~~~ Structs ~~~~~~~
@@ -17,26 +17,21 @@ public struct Proposal<T> has key, store {
     data: T,
 }
 
-// ~~~~~~~ Events ~~~~~~~
-
-public struct VoteCastEvent has copy, drop {
-    proposal_id: ID,
-    total_votes: u64,
-}
-
-public struct ProposalDeletedEvent has copy, drop {
-    proposal_id: ID,
-}
-
-public struct ProposalExecutedEvent has copy, drop {
-    proposal_id: ID,
-}
+// ~~~~~~~ Errors ~~~~~~~
+#[error]
+const EUnauthorizedCaller: vector<u8> = b"Caller must be a quorum voter";
+#[error]
+const ECallerNotCreator: vector<u8> = b"Caller must be the proposal creator";
+#[error]
+const EQuorumNotReached: vector<u8> = b"Quorum not reached";
+#[error]
+const EProposalQuorumMismatch: vector<u8> = b"Proposal quorum mismatch";
 
 // ~~~~~~~ Public Functions ~~~~~~~
 
 public fun new<T: store>(quorum_upgrade: &QuorumUpgrade, data: T, ctx: &mut TxContext) {
     // only voters can create proposal
-    assert!(quorum_upgrade.voters().contains(&ctx.sender()));
+    assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
     let votes = vec_set::from_keys(vector[ctx.sender()]);
 
     let proposal = Proposal {
@@ -50,13 +45,10 @@ public fun new<T: store>(quorum_upgrade: &QuorumUpgrade, data: T, ctx: &mut TxCo
 }
 
 public fun vote<T>(proposal: &mut Proposal<T>, ctx: &mut TxContext) {
-    assert!(!proposal.votes.contains(&ctx.sender()));
+    assert!(!proposal.votes.contains(&ctx.sender()), EUnauthorizedCaller);
     proposal.votes.insert(ctx.sender());
 
-    event::emit(VoteCastEvent {
-        proposal_id: proposal.id.to_inner(),
-        total_votes: proposal.votes.size(),
-    });
+    events::emitVoteCastEvent(proposal.id.to_inner(), proposal.votes.size());
 }
 
 public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgrade): bool {
@@ -66,23 +58,17 @@ public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgr
 }
 
 public fun delete_proposal_by_creator<T: drop>(proposal: Proposal<T>, ctx: &mut TxContext) {
-    assert!(proposal.creator == ctx.sender());
-    event::emit(ProposalDeletedEvent {
-        proposal_id: proposal.id.to_inner(),
-    });
+    assert!(proposal.creator == ctx.sender(), ECallerNotCreator);
+    events::emitProposalDeletedEvent(proposal.id.to_inner());
     proposal.delete();
 }
 
 // ~~~~~~~ Package Functions ~~~~~~~
 
 public(package) fun execute<T>(proposal: Proposal<T>, quorum_upgrade: &QuorumUpgrade): T {
-    assert!(proposal.quorum_reached(quorum_upgrade));
-    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade));
-
-    event::emit(ProposalExecutedEvent {
-        proposal_id: proposal.id.to_inner(),
-    });
-
+    assert!(proposal.quorum_reached(quorum_upgrade), EQuorumNotReached);
+    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
+    events::emitProposalExecutedEvent(proposal.id.to_inner());
     proposal.delete()
 }
 

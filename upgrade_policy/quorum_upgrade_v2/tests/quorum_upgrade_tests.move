@@ -154,3 +154,7 @@ fun relinquish_quorum() {
 
     scenario.end();
 }
+
+// TODO:
+#[test]
+fun authorize_upgrade() {}

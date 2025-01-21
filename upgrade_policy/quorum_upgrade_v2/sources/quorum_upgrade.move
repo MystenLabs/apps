@@ -3,7 +3,7 @@
 
 module quorum_upgrade_v2::quorum_upgrade;
 
-use sui::event;
+use quorum_upgrade_v2::events;
 use sui::package::{Self, UpgradeCap, UpgradeTicket, UpgradeReceipt};
 use sui::table_vec::{Self, TableVec};
 use sui::vec_set::VecSet;
@@ -16,33 +16,16 @@ public struct QuorumUpgrade has key, store {
     proposals: TableVec<ID>,
 }
 
-// ~~~~~~~ Events ~~~~~~~
+// ~~~~~~~ ERRORS ~~~~~~~
 
-public struct VoterAddedEvent has copy, drop {
-    quorum_upgrade_id: ID,
-    voter: address,
-    new_required_votes: u64,
-}
-
-public struct VoterRemovedEvent has copy, drop {
-    proposal_id: ID,
-    voter: address,
-    new_required_votes: u64,
-}
-
-public struct VoterReplacedEvent has copy, drop {
-    proposal_id: ID,
-}
-
-public struct RequiredVotesChangedEvent has copy, drop {
-    proposal_id: ID,
-    new_required_votes: u64,
-}
-
-public struct QuorumRelinquishedEvent has copy, drop {
-    proposal_id: ID,
-    new_required_votes: u64,
-}
+#[error]
+const EInvalidZeroRequiredVotes: vector<u8> = b"Required votes must be greater than 0";
+#[error]
+const EInvalidVoters: vector<u8> = b"Voter set must contain at least the required number of votes";
+#[error]
+const EInvalidOldVoter: vector<u8> = b"Old voter does not exist in the quorum";
+#[error]
+const EInvalidNewVoter: vector<u8> = b"New voter already exists in the quorum";
 
 // ~~~~~~~ Public Functions ~~~~~~~
 
@@ -52,8 +35,8 @@ public fun new(
     voters: VecSet<address>,
     ctx: &mut TxContext,
 ) {
-    assert!(required_votes > 0);
-    assert!(voters.size() >= required_votes);
+    assert!(required_votes > 0, EInvalidZeroRequiredVotes);
+    assert!(voters.size() >= required_votes, EInvalidVoters);
 
     let id = object::new(ctx);
     let quorum_upgrade = QuorumUpgrade {
@@ -87,12 +70,7 @@ public(package) fun add_voter(
 ) {
     quorum_upgrade.voters.insert(voter);
     quorum_upgrade.required_votes = new_required_votes;
-
-    event::emit(VoterAddedEvent {
-        quorum_upgrade_id: quorum_upgrade.id.to_inner(),
-        voter,
-        new_required_votes,
-    });
+    events::emitVoterAddedEvent(quorum_upgrade.id.to_inner(), voter, new_required_votes);
 }
 
 public(package) fun remove_voter(
@@ -102,12 +80,7 @@ public(package) fun remove_voter(
 ) {
     quorum_upgrade.voters.remove(&voter);
     quorum_upgrade.required_votes = new_required_votes;
-
-    event::emit(VoterRemovedEvent {
-        proposal_id: quorum_upgrade.id.to_inner(),
-        voter,
-        new_required_votes,
-    });
+    events::emitVoterRemovedEvent(quorum_upgrade.id.to_inner(), voter, new_required_votes);
 }
 
 public(package) fun replace_voter(
@@ -116,15 +89,11 @@ public(package) fun replace_voter(
     new_voter: address,
 ) {
     // double check assertions for replace_voter_by_owner
-    assert!(quorum_upgrade.voters.contains(&old_voter));
-    assert!(!quorum_upgrade.voters.contains(&new_voter));
-
+    assert!(quorum_upgrade.voters.contains(&old_voter), EInvalidOldVoter);
+    assert!(!quorum_upgrade.voters.contains(&new_voter), EInvalidNewVoter);
     quorum_upgrade.voters.remove(&old_voter);
     quorum_upgrade.voters.insert(new_voter);
-
-    event::emit(VoterReplacedEvent {
-        proposal_id: quorum_upgrade.id.to_inner(),
-    });
+    events::emitVoterReplacedEvent(quorum_upgrade.id.to_inner(), old_voter, new_voter);
 }
 
 public(package) fun update_required_votes(
@@ -132,11 +101,7 @@ public(package) fun update_required_votes(
     new_required_votes: u64,
 ) {
     quorum_upgrade.required_votes = new_required_votes;
-
-    event::emit(RequiredVotesChangedEvent {
-        proposal_id: quorum_upgrade.id.to_inner(),
-        new_required_votes,
-    });
+    events::emitRequiredVotesChangedEvent(quorum_upgrade.id.to_inner(), new_required_votes);
 }
 
 public(package) fun relinquish_quorum(quorum_upgrade: QuorumUpgrade, new_owner: address) {
@@ -146,11 +111,7 @@ public(package) fun relinquish_quorum(quorum_upgrade: QuorumUpgrade, new_owner: 
         proposals: proposals,
         ..,
     } = quorum_upgrade;
-
-    event::emit(QuorumRelinquishedEvent {
-        proposal_id: id.to_inner(),
-        new_required_votes: 0,
-    });
+    events::emitQuorumRelinquishedEvent(id.to_inner());
 
     id.delete();
 
