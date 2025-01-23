@@ -19,15 +19,11 @@ fun invalid_new_proposal() {
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(new_voter);
-    {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
-    };
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
@@ -42,36 +38,26 @@ fun vote() {
     let mut proposal;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
-    };
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
 
     scenario.next_tx(voter1);
-    {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
-        assert!(proposal.votes().size() == 1);
-        assert!(proposal.votes().contains(&voter1));
-    };
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    assert!(proposal.votes().length() == 1);
+    assert!(proposal.votes().contains(&voter1));
 
     scenario.next_tx(voter2);
-    {
-        proposal.vote(scenario.ctx());
-        assert!(proposal.votes().size() == 2);
-        assert!(proposal.votes().contains(&voter2));
-    };
+    proposal.vote(scenario.ctx());
+    assert!(proposal.votes().length() == 2);
+    assert!(proposal.votes().contains(&voter2));
 
     scenario.next_tx(voter3);
-    {
-        proposal.vote(scenario.ctx());
-        assert!(proposal.votes().size() == 3);
-        assert!(proposal.votes().contains(&voter3));
-    };
+    proposal.vote(scenario.ctx());
+    assert!(proposal.votes().length() == 3);
+    assert!(proposal.votes().contains(&voter3));
 
     transfer::public_share_object(quorum_upgrade);
     transfer::public_share_object(proposal);
@@ -87,31 +73,23 @@ fun quorum_reached() {
     let mut proposal;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
-    };
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
 
     scenario.next_tx(voter1);
-    {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
-        assert!(proposal.votes().size() == 1);
-        assert!(proposal.votes().contains(&voter1));
-    };
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    assert!(proposal.votes().length() == 1);
+    assert!(proposal.votes().contains(&voter1));
 
     assert!(!proposal.quorum_reached(&quorum_upgrade));
 
     scenario.next_tx(voter2);
-    {
-        proposal.vote(scenario.ctx());
-        assert!(proposal.votes().size() == 2);
-        assert!(proposal.votes().contains(&voter2));
-    };
+    proposal.vote(scenario.ctx());
+    assert!(proposal.votes().length() == 2);
+    assert!(proposal.votes().contains(&voter2));
 
     assert!(proposal.quorum_reached(&quorum_upgrade));
 
@@ -121,7 +99,7 @@ fun quorum_reached() {
 }
 
 #[test]
-fun delete_proposal_by_creator() {
+fun delete_by_creator() {
     new_quorum_upgrade();
 
     let (voter1, new_voter) = (@0x1, @0x4);
@@ -129,27 +107,19 @@ fun delete_proposal_by_creator() {
     let proposal;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
-    };
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
 
     scenario.next_tx(voter1);
-    {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
-        assert!(proposal.votes().size() == 1);
-        assert!(proposal.votes().contains(&voter1));
-    };
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    assert!(proposal.votes().length() == 1);
+    assert!(proposal.votes().contains(&voter1));
 
     scenario.next_tx(voter1);
-    {
-        proposal.delete_proposal_by_creator(scenario.ctx());
-    };
+    proposal.delete_by_creator(scenario.ctx());
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();

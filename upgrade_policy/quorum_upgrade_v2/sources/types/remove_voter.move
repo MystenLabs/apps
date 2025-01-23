@@ -8,7 +8,7 @@ use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
 public struct RemoveVoter has store, drop {
     voter: address,
-    new_required_votes: u64,
+    new_required_votes: Option<u64>,
 }
 
 // ~~~~~~~ Errors ~~~~~~~
@@ -23,19 +23,32 @@ const EInvalidRequiredVotes: vector<u8> =
 public fun new(
     quorum_upgrade: &QuorumUpgrade,
     voter: address,
-    new_required_votes: u64,
+    mut new_required_votes: Option<u64>,
 ): RemoveVoter {
     assert!(quorum_upgrade.voters().contains(&voter), EInvalidVoter);
-    assert!(new_required_votes > 0, ERequiredVotesZero);
-    assert!(new_required_votes <= quorum_upgrade.voters().size() as u64 - 1, EInvalidRequiredVotes);
+    if (new_required_votes.is_some()) {
+        let required_votes = new_required_votes.extract();
+        assert!(required_votes > 0, ERequiredVotesZero);
+        assert!(required_votes <= quorum_upgrade.voters().size() as u64 - 1, EInvalidRequiredVotes);
+    } else {
+        assert!(
+            quorum_upgrade.voters().size() - 1 >= quorum_upgrade.required_votes(),
+            EInvalidRequiredVotes,
+        );
+    };
+
     RemoveVoter { voter, new_required_votes }
 }
 
 public fun execute(proposal: Proposal<RemoveVoter>, quorum_upgrade: &mut QuorumUpgrade) {
     let RemoveVoter {
         voter,
-        new_required_votes,
+        mut new_required_votes,
     } = proposal.execute(quorum_upgrade);
 
-    quorum_upgrade.remove_voter(voter, new_required_votes);
+    if (new_required_votes.is_some()) {
+        quorum_upgrade.update_required_votes(new_required_votes.extract());
+    };
+
+    quorum_upgrade.remove_voter(voter);
 }

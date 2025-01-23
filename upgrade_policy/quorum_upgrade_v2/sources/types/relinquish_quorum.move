@@ -18,9 +18,7 @@ public fun new(new_owner: address): RelinquishQuorum {
 public fun execute(proposal: Proposal<RelinquishQuorum>, quorum_upgrade: QuorumUpgrade) {
     let RelinquishQuorum {
         new_owner,
-    } = proposal.data();
+    } = proposal.execute(&quorum_upgrade);
 
-    quorum_upgrade.relinquish_quorum(*new_owner);
-
-    proposal.delete();
+    quorum_upgrade.relinquish_quorum(new_owner);
 }

@@ -19,36 +19,26 @@ fun add_voter_proposal() {
     let mut proposal;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, 3);
-        proposal::new(&quorum_upgrade, add_voter_proposal, scenario.ctx());
-    };
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
 
     scenario.next_tx(voter1);
-    {
-        proposal = scenario.take_shared<Proposal<AddVoter>>();
-        assert!(proposal.votes().size() == 1);
-        assert!(proposal.votes().contains(&voter1));
-    };
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    assert!(proposal.votes().length() == 1);
+    assert!(proposal.votes().contains(&voter1));
 
     scenario.next_tx(voter2);
-    {
-        proposal.vote(scenario.ctx());
-        assert!(proposal.votes().size() == 2);
-        assert!(proposal.votes().contains(&voter2));
-    };
+    proposal.vote(scenario.ctx());
+    assert!(proposal.votes().length() == 2);
+    assert!(proposal.votes().contains(&voter2));
 
     scenario.next_tx(voter3);
-    {
-        add_voter::execute(proposal, &mut quorum_upgrade);
-        assert!(quorum_upgrade.voters().size() == 4);
-        assert!(quorum_upgrade.voters().contains(&new_voter));
-    };
+    add_voter::execute(proposal, &mut quorum_upgrade);
+    assert!(quorum_upgrade.voters().size() == 4);
+    assert!(quorum_upgrade.voters().contains(&new_voter));
 
     assert!(quorum_upgrade.voters().size() == 4);
     assert!(quorum_upgrade.voters().contains(&new_voter));
@@ -57,8 +47,7 @@ fun add_voter_proposal() {
     scenario.end();
 }
 
-#[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidNewVoter)]
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidNewVoter)]
 fun invalid_new_voter() {
     new_quorum_upgrade();
 
@@ -66,22 +55,16 @@ fun invalid_new_voter() {
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        // Try and add a voter already in quorum
-        add_voter::new(&quorum_upgrade, voter3, 3);
-    };
-
+    // Try and add a voter already in quorum
+    add_voter::new(&quorum_upgrade, voter3, option::some(3));
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
 }
 
-#[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::ERequiredVotesZero)]
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::ERequiredVotesZero)]
 fun invalid_zero_required_votes() {
     new_quorum_upgrade();
 
@@ -89,22 +72,17 @@ fun invalid_zero_required_votes() {
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 0);
-    };
+    // Try and add a voter with less than 1 required votes
+    add_voter::new(&quorum_upgrade, new_voter, option::some(0));
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
 }
 
-#[test]
-#[expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidRequiredVotes)]
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::add_voter::EInvalidRequiredVotes)]
 fun invalid_required_votes() {
     new_quorum_upgrade();
 
@@ -112,15 +90,11 @@ fun invalid_required_votes() {
     let quorum_upgrade;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        // Try and add a voter with less than 1 required votes
-        add_voter::new(&quorum_upgrade, new_voter, 5);
-    };
+    // Try and add a voter with less than 1 required votes
+    add_voter::new(&quorum_upgrade, new_voter, option::some(5));
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();

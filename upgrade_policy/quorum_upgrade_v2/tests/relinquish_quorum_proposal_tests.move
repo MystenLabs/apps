@@ -20,38 +20,27 @@ fun relinquish_quorum_proposal() {
     let mut proposal;
 
     let mut scenario = test_scenario::begin(voter1);
-    {
-        quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    };
+
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
 
     scenario.next_tx(voter1);
-    {
-        let relinquish_quorum_proposal = relinquish_quorum::new(new_owner);
-        proposal::new(&quorum_upgrade, relinquish_quorum_proposal, scenario.ctx());
-    };
+    let relinquish_quorum_proposal = relinquish_quorum::new(new_owner);
+    proposal::new(&quorum_upgrade, relinquish_quorum_proposal, option::none(), scenario.ctx());
 
     scenario.next_tx(voter2);
-    {
-        proposal = scenario.take_shared<Proposal<RelinquishQuorum>>();
-        assert!(proposal.votes().size() == 1);
-        assert!(proposal.votes().contains(&voter1));
-    };
+    proposal = scenario.take_shared<Proposal<RelinquishQuorum>>();
+    assert!(proposal.votes().length() == 1);
+    assert!(proposal.votes().contains(&voter1));
 
     scenario.next_tx(voter2);
-    {
-        proposal.vote(scenario.ctx());
-        assert!(proposal.votes().size() == 2);
-        assert!(proposal.votes().contains(&voter2));
-    };
+    proposal.vote(scenario.ctx());
+    assert!(proposal.votes().length() == 2);
+    assert!(proposal.votes().contains(&voter2));
 
     scenario.next_tx(voter1);
-    {
-        relinquish_quorum::execute(proposal, quorum_upgrade);
-    };
+    relinquish_quorum::execute(proposal, quorum_upgrade);
     scenario.next_tx(voter1);
-    {
-        let upgrade_cap = scenario.take_from_address<UpgradeCap>(new_owner);
-        transfer::public_transfer(upgrade_cap, new_owner);
-    };
+    let upgrade_cap = scenario.take_from_address<UpgradeCap>(new_owner);
+    transfer::public_transfer(upgrade_cap, new_owner);
     scenario.end();
 }

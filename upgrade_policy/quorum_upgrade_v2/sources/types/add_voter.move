@@ -8,7 +8,7 @@ use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
 public struct AddVoter has store, drop {
     voter: address,
-    new_required_votes: u64,
+    new_required_votes: Option<u64>,
 }
 
 #[error]
@@ -19,18 +19,29 @@ const ERequiredVotesZero: vector<u8> = b"Required votes must be greater than 0";
 const EInvalidRequiredVotes: vector<u8> =
     b"Required votes must be less than or equal to the number of voters";
 
-public fun new(quorum_upgrade: &QuorumUpgrade, voter: address, new_required_votes: u64): AddVoter {
+public fun new(
+    quorum_upgrade: &QuorumUpgrade,
+    voter: address,
+    mut new_required_votes: Option<u64>,
+): AddVoter {
     assert!(!quorum_upgrade.voters().contains(&voter), EInvalidNewVoter);
-    assert!(new_required_votes > 0, ERequiredVotesZero);
-    assert!(new_required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
+    if (new_required_votes.is_some()) {
+        let required_votes = new_required_votes.extract();
+        assert!(required_votes > 0, ERequiredVotesZero);
+        assert!(required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
+    };
+
     AddVoter { voter, new_required_votes }
 }
 
 public fun execute(proposal: Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgrade) {
     let AddVoter {
         voter,
-        new_required_votes,
+        mut new_required_votes,
     } = proposal.execute(quorum_upgrade);
 
-    quorum_upgrade.add_voter(voter, new_required_votes);
+    if (new_required_votes.is_some()) {
+        quorum_upgrade.update_required_votes(new_required_votes.extract());
+    };
+    quorum_upgrade.add_voter(voter);
 }

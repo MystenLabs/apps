@@ -49,7 +49,7 @@ public fun new(
     transfer::share_object(quorum_upgrade);
 }
 
-public fun replace_voter_by_owner(
+public fun replace_self(
     quorum_upgrade: &mut QuorumUpgrade,
     new_voter: address,
     ctx: &mut TxContext,
@@ -63,24 +63,14 @@ public fun commit_upgrade(quorum_upgrade: &mut QuorumUpgrade, receipt: UpgradeRe
 
 // ~~~~~~~ Package Functions ~~~~~~~
 
-public(package) fun add_voter(
-    quorum_upgrade: &mut QuorumUpgrade,
-    voter: address,
-    new_required_votes: u64,
-) {
+public(package) fun add_voter(quorum_upgrade: &mut QuorumUpgrade, voter: address) {
     quorum_upgrade.voters.insert(voter);
-    quorum_upgrade.required_votes = new_required_votes;
-    events::emitVoterAddedEvent(quorum_upgrade.id.to_inner(), voter, new_required_votes);
+    events::emit_voter_added_event(quorum_upgrade.id.to_inner(), voter);
 }
 
-public(package) fun remove_voter(
-    quorum_upgrade: &mut QuorumUpgrade,
-    voter: address,
-    new_required_votes: u64,
-) {
+public(package) fun remove_voter(quorum_upgrade: &mut QuorumUpgrade, voter: address) {
     quorum_upgrade.voters.remove(&voter);
-    quorum_upgrade.required_votes = new_required_votes;
-    events::emitVoterRemovedEvent(quorum_upgrade.id.to_inner(), voter, new_required_votes);
+    events::emit_voter_removed_event(quorum_upgrade.id.to_inner(), voter);
 }
 
 public(package) fun replace_voter(
@@ -88,12 +78,12 @@ public(package) fun replace_voter(
     old_voter: address,
     new_voter: address,
 ) {
-    // double check assertions for replace_voter_by_owner
+    // double check assertions for replace_self
     assert!(quorum_upgrade.voters.contains(&old_voter), EInvalidOldVoter);
     assert!(!quorum_upgrade.voters.contains(&new_voter), EInvalidNewVoter);
     quorum_upgrade.voters.remove(&old_voter);
     quorum_upgrade.voters.insert(new_voter);
-    events::emitVoterReplacedEvent(quorum_upgrade.id.to_inner(), old_voter, new_voter);
+    events::emit_voter_replaced_event(quorum_upgrade.id.to_inner(), old_voter, new_voter);
 }
 
 public(package) fun update_required_votes(
@@ -101,7 +91,7 @@ public(package) fun update_required_votes(
     new_required_votes: u64,
 ) {
     quorum_upgrade.required_votes = new_required_votes;
-    events::emitRequiredVotesChangedEvent(quorum_upgrade.id.to_inner(), new_required_votes);
+    events::emit_required_votes_changed_event(quorum_upgrade.id.to_inner(), new_required_votes);
 }
 
 public(package) fun relinquish_quorum(quorum_upgrade: QuorumUpgrade, new_owner: address) {
@@ -111,7 +101,7 @@ public(package) fun relinquish_quorum(quorum_upgrade: QuorumUpgrade, new_owner: 
         proposals: proposals,
         ..,
     } = quorum_upgrade;
-    events::emitQuorumRelinquishedEvent(id.to_inner());
+    events::emit_quorum_relinquished_event(id.to_inner());
 
     id.delete();
 

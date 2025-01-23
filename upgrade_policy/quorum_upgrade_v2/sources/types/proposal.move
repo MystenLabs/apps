@@ -5,7 +5,8 @@ module quorum_upgrade_v2::proposal;
 
 use quorum_upgrade_v2::events;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
-use sui::vec_set::{Self, VecSet};
+use std::string::String;
+use sui::vec_map::VecMap;
 
 // ~~~~~~~ Structs ~~~~~~~
 
@@ -13,7 +14,8 @@ public struct Proposal<T> has key, store {
     id: UID,
     creator: address,
     quorum_upgrade: ID,
-    votes: VecSet<address>,
+    votes: vector<address>,
+    metadata: Option<VecMap<String, String>>,
     data: T,
 }
 
@@ -29,16 +31,22 @@ const EProposalQuorumMismatch: vector<u8> = b"Proposal quorum mismatch";
 
 // ~~~~~~~ Public Functions ~~~~~~~
 
-public fun new<T: store>(quorum_upgrade: &QuorumUpgrade, data: T, ctx: &mut TxContext) {
+public fun new<T: store>(
+    quorum_upgrade: &QuorumUpgrade,
+    data: T,
+    metadata: Option<VecMap<String, String>>,
+    ctx: &mut TxContext,
+) {
     // only voters can create proposal
     assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
-    let votes = vec_set::from_keys(vector[ctx.sender()]);
+    let votes = vector[ctx.sender()];
 
     let proposal = Proposal {
         id: object::new(ctx),
         creator: ctx.sender(),
         quorum_upgrade: object::id(quorum_upgrade),
         votes,
+        metadata,
         data,
     };
     transfer::share_object(proposal);
@@ -46,20 +54,24 @@ public fun new<T: store>(quorum_upgrade: &QuorumUpgrade, data: T, ctx: &mut TxCo
 
 public fun vote<T>(proposal: &mut Proposal<T>, ctx: &mut TxContext) {
     assert!(!proposal.votes.contains(&ctx.sender()), EUnauthorizedCaller);
-    proposal.votes.insert(ctx.sender());
-
-    events::emitVoteCastEvent(proposal.id.to_inner(), proposal.votes.size());
+    proposal.votes.push_back(ctx.sender());
+    events::emit_vote_cast_event(proposal.id.to_inner(), proposal.votes.length());
 }
 
 public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgrade): bool {
-    let current_votes = proposal.votes.size();
-    let required_votes = quorum_upgrade.required_votes();
-    current_votes >= required_votes
+    let valid_votes = proposal.votes.fold!(0, |acc, vote| {
+        if (quorum_upgrade.voters().contains(&vote)) {
+            acc + 1
+        } else {
+            acc
+        }
+    });
+    valid_votes >= quorum_upgrade.required_votes()
 }
 
-public fun delete_proposal_by_creator<T: drop>(proposal: Proposal<T>, ctx: &mut TxContext) {
+public fun delete_by_creator<T: drop>(proposal: Proposal<T>, ctx: &mut TxContext) {
     assert!(proposal.creator == ctx.sender(), ECallerNotCreator);
-    events::emitProposalDeletedEvent(proposal.id.to_inner());
+    events::emit_proposal_deleted_event(proposal.id.to_inner());
     proposal.delete();
 }
 
@@ -68,7 +80,7 @@ public fun delete_proposal_by_creator<T: drop>(proposal: Proposal<T>, ctx: &mut 
 public(package) fun execute<T>(proposal: Proposal<T>, quorum_upgrade: &QuorumUpgrade): T {
     assert!(proposal.quorum_reached(quorum_upgrade), EQuorumNotReached);
     assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
-    events::emitProposalExecutedEvent(proposal.id.to_inner());
+    events::emit_proposal_executed_event(proposal.id.to_inner());
     proposal.delete()
 }
 
@@ -92,6 +104,6 @@ public fun quorum_upgrade<T>(proposal: &Proposal<T>): ID {
     proposal.quorum_upgrade
 }
 
-public fun votes<T>(proposal: &Proposal<T>): &VecSet<address> {
+public fun votes<T>(proposal: &Proposal<T>): &vector<address> {
     &proposal.votes
 }
