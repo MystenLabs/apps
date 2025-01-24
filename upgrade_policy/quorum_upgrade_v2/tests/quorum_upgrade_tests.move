@@ -137,6 +137,55 @@ fun relinquish_quorum() {
     scenario.end();
 }
 
-// TODO:
-#[test]
-fun authorize_upgrade() {}
+#[
+    test,
+    expected_failure(
+        abort_code = ::quorum_upgrade_v2::quorum_upgrade::EInvalidZeroRequiredVotes,
+    ),
+]
+fun new_quorum_upgrade_zero_failure() {
+    let (voter1, voter2, voter3) = (@0x1, @0x2, @0x3);
+
+    let mut scenario = test_scenario::begin(voter1);
+    let cap = package::test_publish(id(@0x42), scenario.ctx());
+    let voters = vec_set::from_keys(vector[voter1, voter2, voter3]);
+    quorum_upgrade::new(cap, 0, voters, scenario.ctx());
+    abort 1337
+}
+
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::quorum_upgrade::EInvalidVoters)]
+fun new_quorum_upgrade_required_votes_failure() {
+    let (voter1, voter2) = (@0x1, @0x2);
+
+    let mut scenario = test_scenario::begin(voter1);
+    let cap = package::test_publish(id(@0x42), scenario.ctx());
+    let voters = vec_set::from_keys(vector[voter1, voter2]);
+    quorum_upgrade::new(cap, 3, voters, scenario.ctx());
+    abort 1337
+}
+
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::quorum_upgrade::EInvalidOldVoter)]
+fun replace_quorum_old_voter_failure() {
+    new_quorum_upgrade();
+
+    let (voter1, _voter2, _voter3, voter4, voter5) = (@0x1, @0x2, @0x3, @0x4, @0x5);
+    let mut quorum_upgrade;
+
+    let scenario = test_scenario::begin(voter1);
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    quorum_upgrade.replace_voter(voter4, voter5);
+    abort 1337
+}
+
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::quorum_upgrade::EInvalidNewVoter)]
+fun replace_quorum_new_voter_failure() {
+    new_quorum_upgrade();
+
+    let (voter1, voter2) = (@0x1, @0x2);
+    let mut quorum_upgrade;
+
+    let scenario = test_scenario::begin(voter1);
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+    quorum_upgrade.replace_voter(voter1, voter2);
+    abort 1337
+}

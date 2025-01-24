@@ -23,13 +23,16 @@ const EInvalidRequiredVotes: vector<u8> =
 public fun new(
     quorum_upgrade: &QuorumUpgrade,
     voter: address,
-    mut new_required_votes: Option<u64>,
+    new_required_votes: Option<u64>,
 ): RemoveVoter {
     assert!(quorum_upgrade.voters().contains(&voter), EInvalidVoter);
     if (new_required_votes.is_some()) {
-        let required_votes = new_required_votes.extract();
-        assert!(required_votes > 0, ERequiredVotesZero);
-        assert!(required_votes <= quorum_upgrade.voters().size() as u64 - 1, EInvalidRequiredVotes);
+        let required_votes = new_required_votes.borrow();
+        assert!(*required_votes > 0, ERequiredVotesZero);
+        assert!(
+            *required_votes <= quorum_upgrade.voters().size() as u64 - 1,
+            EInvalidRequiredVotes,
+        );
     } else {
         assert!(
             quorum_upgrade.voters().size() - 1 >= quorum_upgrade.required_votes(),

@@ -34,7 +34,7 @@ fun update_required_votes_proposal() {
     assert!(proposal.votes().contains(&voter1));
 
     scenario.next_tx(voter2);
-    proposal.vote(scenario.ctx());
+    proposal.vote(&quorum_upgrade, scenario.ctx());
     assert!(proposal.votes().length() == 2);
     assert!(proposal.votes().contains(&voter2));
 

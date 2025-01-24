@@ -23,6 +23,8 @@ public struct Proposal<T> has key, store {
 #[error]
 const EUnauthorizedCaller: vector<u8> = b"Caller must be a quorum voter";
 #[error]
+const EVoteAlreadyCounted: vector<u8> = b"Vote already counted";
+#[error]
 const ECallerNotCreator: vector<u8> = b"Caller must be the proposal creator";
 #[error]
 const EQuorumNotReached: vector<u8> = b"Quorum not reached";
@@ -52,15 +54,20 @@ public fun new<T: store>(
     transfer::share_object(proposal);
 }
 
-public fun vote<T>(proposal: &mut Proposal<T>, ctx: &mut TxContext) {
-    assert!(!proposal.votes.contains(&ctx.sender()), EUnauthorizedCaller);
+public fun vote<T>(
+    proposal: &mut Proposal<T>,
+    quorum_upgrade: &QuorumUpgrade,
+    ctx: &mut TxContext,
+) {
+    assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
+    assert!(!proposal.votes.contains(&ctx.sender()), EVoteAlreadyCounted);
     proposal.votes.push_back(ctx.sender());
     events::emit_vote_cast_event(proposal.id.to_inner(), proposal.votes.length());
 }
 
 public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgrade): bool {
-    let valid_votes = proposal.votes.fold!(0, |acc, vote| {
-        if (quorum_upgrade.voters().contains(&vote)) {
+    let valid_votes = proposal.votes.fold!(0, |acc, voter| {
+        if (quorum_upgrade.voters().contains(&voter)) {
             acc + 1
         } else {
             acc
