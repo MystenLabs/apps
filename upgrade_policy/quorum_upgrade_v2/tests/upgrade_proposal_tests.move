@@ -10,6 +10,7 @@ use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
 use quorum_upgrade_v2::upgrade::{Self, Upgrade};
 use sui::package;
 use sui::test_scenario;
+use sui::vec_map;
 
 // TODO:
 #[test]
@@ -26,7 +27,7 @@ fun upgrade_proposal() {
 
     scenario.next_tx(voter1);
     let upgrade_proposal = upgrade::new(digest);
-    proposal::new(&quorum_upgrade, upgrade_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, upgrade_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<Upgrade>>();

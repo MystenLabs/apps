@@ -50,7 +50,7 @@ public fun execute(proposal: Proposal<RemoveVoter>, quorum_upgrade: &mut QuorumU
     } = proposal.execute(quorum_upgrade);
 
     if (new_required_votes.is_some()) {
-        quorum_upgrade.update_required_votes(new_required_votes.extract());
+        quorum_upgrade.update_threshold(new_required_votes.extract());
     };
 
     quorum_upgrade.remove_voter(voter);

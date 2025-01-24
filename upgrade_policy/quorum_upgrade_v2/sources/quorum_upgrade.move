@@ -54,7 +54,7 @@ public fun replace_self(
     new_voter: address,
     ctx: &mut TxContext,
 ) {
-    replace_voter(quorum_upgrade, ctx.sender(), new_voter)
+    quorum_upgrade.replace_voter(ctx.sender(), new_voter)
 }
 
 public fun commit_upgrade(quorum_upgrade: &mut QuorumUpgrade, receipt: UpgradeReceipt) {
@@ -86,12 +86,9 @@ public(package) fun replace_voter(
     events::emit_voter_replaced_event(quorum_upgrade.id.to_inner(), old_voter, new_voter);
 }
 
-public(package) fun update_required_votes(
-    quorum_upgrade: &mut QuorumUpgrade,
-    new_required_votes: u64,
-) {
+public(package) fun update_threshold(quorum_upgrade: &mut QuorumUpgrade, new_required_votes: u64) {
     quorum_upgrade.required_votes = new_required_votes;
-    events::emit_required_votes_changed_event(quorum_upgrade.id.to_inner(), new_required_votes);
+    events::emit_threshold_updated_event(quorum_upgrade.id.to_inner(), new_required_votes);
 }
 
 public(package) fun relinquish_quorum(quorum_upgrade: QuorumUpgrade, new_owner: address) {

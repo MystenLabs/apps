@@ -10,6 +10,7 @@ use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
 use quorum_upgrade_v2::relinquish_quorum::{Self, RelinquishQuorum};
 use sui::package::UpgradeCap;
 use sui::test_scenario;
+use sui::vec_map;
 
 #[test]
 fun relinquish_quorum_proposal() {
@@ -25,7 +26,7 @@ fun relinquish_quorum_proposal() {
 
     scenario.next_tx(voter1);
     let relinquish_quorum_proposal = relinquish_quorum::new(new_owner);
-    proposal::new(&quorum_upgrade, relinquish_quorum_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, relinquish_quorum_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter2);
     proposal = scenario.take_shared<Proposal<RelinquishQuorum>>();

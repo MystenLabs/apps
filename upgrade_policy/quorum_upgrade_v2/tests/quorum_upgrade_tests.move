@@ -103,7 +103,7 @@ fun replace_voter() {
 }
 
 #[test]
-fun update_required_votes() {
+fun update_threshold() {
     new_quorum_upgrade();
 
     let voter1 = @0x1;
@@ -111,7 +111,7 @@ fun update_required_votes() {
 
     let scenario = test_scenario::begin(voter1);
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
-    quorum_upgrade.update_required_votes(1);
+    quorum_upgrade.update_threshold(1);
 
     assert!(quorum_upgrade.required_votes() == 1);
 

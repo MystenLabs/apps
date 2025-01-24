@@ -5,12 +5,15 @@
 module quorum_upgrade_v2::proposal_tests;
 
 use quorum_upgrade_v2::add_voter::{Self, AddVoter};
+use quorum_upgrade_v2::events::QuorumReachedEvent;
 use quorum_upgrade_v2::proposal::{Self, Proposal};
 use quorum_upgrade_v2::quorum_upgrade::{Self, QuorumUpgrade};
 use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
+use sui::event;
 use sui::object::id_from_address as id;
 use sui::package;
 use sui::test_scenario;
+use sui::vec_map;
 use sui::vec_set;
 
 #[test]
@@ -26,7 +29,7 @@ fun invalid_new_proposal() {
 
     scenario.next_tx(new_voter);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
@@ -45,7 +48,7 @@ fun vote() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -80,7 +83,7 @@ fun quorum_reached() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -114,7 +117,7 @@ fun delete_by_creator() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -141,7 +144,7 @@ fun vote_by_non_voter() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -164,7 +167,7 @@ fun vote_already_counted() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -188,7 +191,7 @@ fun invalid_votes_not_counted() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter3);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -218,7 +221,7 @@ fun invalid_delete_by_non_creator() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -242,7 +245,7 @@ fun invalid_execute_insufficient_votes() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -265,7 +268,7 @@ fun mismatch_quorum_upgrade_execution() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter2);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -297,7 +300,7 @@ fun proposal_data_value() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
@@ -324,12 +327,73 @@ fun proposal_quorum_upgrade_value() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<AddVoter>>();
     assert!(proposal.quorum_upgrade() == object::id(&quorum_upgrade));
 
+    transfer::public_share_object(quorum_upgrade);
+    transfer::public_share_object(proposal);
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = ::quorum_upgrade_v2::proposal::EProposalQuorumMismatch)]
+fun mismatch_quorum_upgrade_vote() {
+    new_quorum_upgrade();
+
+    let (voter1, voter2, voter3, new_voter) = (@0x1, @0x2, @0x3, @0x4);
+    let quorum_upgrade;
+    let mut proposal;
+
+    let mut scenario = test_scenario::begin(voter1);
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+
+    scenario.next_tx(voter1);
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
+
+    scenario.next_tx(voter2);
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    proposal.vote(&quorum_upgrade, scenario.ctx());
+
+    let cap = package::test_publish(id(@0x42), scenario.ctx());
+    let voters = vec_set::from_keys(vector[voter1, voter2, voter3]);
+    quorum_upgrade::new(cap, 2, voters, scenario.ctx());
+
+    scenario.next_tx(voter1);
+    let temp_quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+
+    scenario.next_tx(voter3);
+    proposal.vote(&temp_quorum_upgrade, scenario.ctx());
+    abort 1337
+}
+
+#[test]
+fun proposal_reached_event_emitted_on_vote() {
+    new_quorum_upgrade();
+
+    let (voter1, voter2, new_voter) = (@0x1, @0x2, @0x4);
+    let quorum_upgrade;
+    let mut proposal;
+
+    let mut scenario = test_scenario::begin(voter1);
+    quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
+
+    scenario.next_tx(voter1);
+    let add_voter_proposal = add_voter::new(&quorum_upgrade, new_voter, option::some(3));
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
+
+    scenario.next_tx(voter1);
+    proposal = scenario.take_shared<Proposal<AddVoter>>();
+    assert!(proposal.quorum_reached(&quorum_upgrade) == false);
+
+    scenario.next_tx(voter2);
+    proposal.vote(&quorum_upgrade, scenario.ctx());
+    assert!(proposal.quorum_reached(&quorum_upgrade) == true);
+    let event = event::events_by_type<QuorumReachedEvent>();
+    assert!(event.length() == 1);
+    assert!(event[0].proposal_id() == object::id(&proposal));
     transfer::public_share_object(quorum_upgrade);
     transfer::public_share_object(proposal);
     scenario.end();

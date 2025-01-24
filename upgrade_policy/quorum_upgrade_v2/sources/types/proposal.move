@@ -15,7 +15,7 @@ public struct Proposal<T> has key, store {
     creator: address,
     quorum_upgrade: ID,
     votes: vector<address>,
-    metadata: Option<VecMap<String, String>>,
+    metadata: VecMap<String, String>,
     data: T,
 }
 
@@ -36,7 +36,7 @@ const EProposalQuorumMismatch: vector<u8> = b"Proposal quorum mismatch";
 public fun new<T: store>(
     quorum_upgrade: &QuorumUpgrade,
     data: T,
-    metadata: Option<VecMap<String, String>>,
+    metadata: VecMap<String, String>,
     ctx: &mut TxContext,
 ) {
     // only voters can create proposal
@@ -61,8 +61,12 @@ public fun vote<T>(
 ) {
     assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
     assert!(!proposal.votes.contains(&ctx.sender()), EVoteAlreadyCounted);
+    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
     proposal.votes.push_back(ctx.sender());
-    events::emit_vote_cast_event(proposal.id.to_inner(), proposal.votes.length());
+    events::emit_vote_cast_event(proposal.id.to_inner(), ctx.sender());
+    if (proposal.quorum_reached(quorum_upgrade)) {
+        events::emit_quorum_reached_event(proposal.id.to_inner());
+    }
 }
 
 public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgrade): bool {
@@ -101,11 +105,7 @@ public(package) fun delete<T>(proposal: Proposal<T>): T {
     data
 }
 
-// ~~~~~~~ Getters                                                                                                                                                                                                                                                                                                                                                                          ~~~~~~~
-
-public fun data<T>(proposal: &Proposal<T>): &T {
-    &proposal.data
-}
+// ~~~~~~~ Getters ~~~~~~~                                                                                                                                                                                                                                                                                                                                                              ~~~~~~~
 
 public fun quorum_upgrade<T>(proposal: &Proposal<T>): ID {
     proposal.quorum_upgrade
@@ -113,4 +113,9 @@ public fun quorum_upgrade<T>(proposal: &Proposal<T>): ID {
 
 public fun votes<T>(proposal: &Proposal<T>): &vector<address> {
     &proposal.votes
+}
+
+#[test_only]
+public fun data<T>(proposal: &Proposal<T>): &T {
+    &proposal.data
 }

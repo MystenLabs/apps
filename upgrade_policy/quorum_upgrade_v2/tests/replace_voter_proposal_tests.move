@@ -9,6 +9,7 @@ use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
 use quorum_upgrade_v2::replace_voter::{Self, ReplaceVoter};
 use sui::test_scenario;
+use sui::vec_map;
 
 #[test]
 fun replace_voter_proposal() {
@@ -23,7 +24,7 @@ fun replace_voter_proposal() {
 
     scenario.next_tx(voter1);
     let add_voter_proposal = replace_voter::new(&quorum_upgrade, new_voter, voter3);
-    proposal::new(&quorum_upgrade, add_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, add_voter_proposal, vec_map::empty(), scenario.ctx());
 
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<ReplaceVoter>>();

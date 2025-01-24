@@ -9,6 +9,7 @@ use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 use quorum_upgrade_v2::quorum_upgrade_tests::new_quorum_upgrade;
 use quorum_upgrade_v2::remove_voter::{Self, RemoveVoter};
 use sui::test_scenario;
+use sui::vec_map;
 
 #[test]
 fun remove_voter_proposal() {
@@ -20,7 +21,7 @@ fun remove_voter_proposal() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     scenario.next_tx(voter1);
     let remove_voter_proposal = remove_voter::new(&quorum_upgrade, voter3, option::none());
-    proposal::new(&quorum_upgrade, remove_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, remove_voter_proposal, vec_map::empty(), scenario.ctx());
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<RemoveVoter>>();
     assert!(proposal.votes().length() == 1);
@@ -47,7 +48,7 @@ fun remove_voter_and_update_required() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     scenario.next_tx(voter1);
     let remove_voter_proposal = remove_voter::new(&quorum_upgrade, voter3, option::some(1));
-    proposal::new(&quorum_upgrade, remove_voter_proposal, option::none(), scenario.ctx());
+    proposal::new(&quorum_upgrade, remove_voter_proposal, vec_map::empty(), scenario.ctx());
     scenario.next_tx(voter1);
     proposal = scenario.take_shared<Proposal<RemoveVoter>>();
     assert!(proposal.votes().length() == 1);

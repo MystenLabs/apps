@@ -41,7 +41,7 @@ public fun execute(proposal: Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgr
     } = proposal.execute(quorum_upgrade);
 
     if (new_required_votes.is_some()) {
-        quorum_upgrade.update_required_votes(new_required_votes.extract());
+        quorum_upgrade.update_threshold(new_required_votes.extract());
     };
     quorum_upgrade.add_voter(voter);
 }
