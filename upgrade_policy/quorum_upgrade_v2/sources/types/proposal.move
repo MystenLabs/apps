@@ -30,6 +30,8 @@ const ECallerNotCreator: vector<u8> = b"Caller must be the proposal creator";
 const EQuorumNotReached: vector<u8> = b"Quorum not reached";
 #[error]
 const EProposalQuorumMismatch: vector<u8> = b"Proposal quorum mismatch";
+#[error]
+const ENoVoteFound: vector<u8> = b"Vote doesn't exist";
 
 // ~~~~~~~ Public Functions ~~~~~~~
 
@@ -67,6 +69,21 @@ public fun vote<T>(
     if (proposal.quorum_reached(quorum_upgrade)) {
         events::emit_quorum_reached_event(proposal.id.to_inner());
     }
+}
+
+public fun remove_vote<T>(
+    proposal: &mut Proposal<T>,
+    quorum_upgrade: &QuorumUpgrade,
+    ctx: &mut TxContext,
+) {
+    assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
+    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
+
+    let (vote_exists, index) = proposal.votes.index_of(&ctx.sender());
+    assert!(vote_exists, ENoVoteFound);
+
+    proposal.votes.remove(index);
+    events::emit_vote_removed_event(proposal.id.to_inner(), ctx.sender());
 }
 
 public fun quorum_reached<T>(proposal: &Proposal<T>, quorum_upgrade: &QuorumUpgrade): bool {

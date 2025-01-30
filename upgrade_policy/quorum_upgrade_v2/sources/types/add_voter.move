@@ -6,7 +6,7 @@ module quorum_upgrade_v2::add_voter;
 use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
-public struct AddVoter has store, drop {
+public struct AddVoter has drop, store {
     voter: address,
     new_required_votes: Option<u64>,
 }
@@ -24,14 +24,9 @@ public fun new(
     voter: address,
     new_required_votes: Option<u64>,
 ): AddVoter {
-    assert!(!quorum_upgrade.voters().contains(&voter), EInvalidNewVoter);
-    if (new_required_votes.is_some()) {
-        let required_votes = new_required_votes.borrow();
-        assert!(*required_votes > 0, ERequiredVotesZero);
-        assert!(*required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
-    };
-
-    AddVoter { voter, new_required_votes }
+    let add_voter = AddVoter { voter, new_required_votes };
+    assert_valid_proposal(&add_voter, quorum_upgrade);
+    add_voter
 }
 
 public fun execute(proposal: Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgrade) {
@@ -44,6 +39,17 @@ public fun execute(proposal: Proposal<AddVoter>, quorum_upgrade: &mut QuorumUpgr
         quorum_upgrade.update_threshold(new_required_votes.extract());
     };
     quorum_upgrade.add_voter(voter);
+}
+
+public fun assert_valid_proposal(add_voter: &AddVoter, quorum_upgrade: &QuorumUpgrade) {
+    let voter = add_voter.voter;
+    let new_required_votes = add_voter.new_required_votes;
+    assert!(!quorum_upgrade.voters().contains(&voter), EInvalidNewVoter);
+    if (new_required_votes.is_some()) {
+        let required_votes = new_required_votes.borrow();
+        assert!(*required_votes > 0, ERequiredVotesZero);
+        assert!(*required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
+    };
 }
 
 public fun voter(add_voter: &AddVoter): address {

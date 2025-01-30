@@ -7,6 +7,11 @@ public struct VoteCastEvent has copy, drop {
     voter: address,
 }
 
+public struct VoteRemovedEvent has copy, drop {
+    proposal_id: ID,
+    voter: address,
+}
+
 public struct ProposalDeletedEvent has copy, drop {
     proposal_id: ID,
 }
@@ -46,6 +51,13 @@ public struct QuorumRelinquishedEvent has copy, drop {
 
 public(package) fun emit_vote_cast_event(proposal_id: ID, voter: address) {
     event::emit(VoteCastEvent {
+        proposal_id,
+        voter,
+    });
+}
+
+public(package) fun emit_vote_removed_event(proposal_id: ID, voter: address) {
+    event::emit(VoteRemovedEvent {
         proposal_id,
         voter,
     });

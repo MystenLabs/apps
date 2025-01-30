@@ -6,11 +6,10 @@ module quorum_upgrade_v2::relinquish_quorum;
 use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
-public struct RelinquishQuorum has store, drop {
+public struct RelinquishQuorum has drop, store {
     new_owner: address,
 }
 
-// Does/can validation happen here on the provided params
 public fun new(new_owner: address): RelinquishQuorum {
     RelinquishQuorum { new_owner }
 }

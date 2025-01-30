@@ -6,7 +6,7 @@ module quorum_upgrade_v2::replace_voter;
 use quorum_upgrade_v2::proposal::Proposal;
 use quorum_upgrade_v2::quorum_upgrade::QuorumUpgrade;
 
-public struct ReplaceVoter has store, drop {
+public struct ReplaceVoter has drop, store {
     new_voter: address,
     old_voter: address,
 }
@@ -22,9 +22,9 @@ public fun new(
     new_voter: address,
     old_voter: address,
 ): ReplaceVoter {
-    assert!(quorum_upgrade.voters().contains(&old_voter), EInvalidOldVoter);
-    assert!(!quorum_upgrade.voters().contains(&new_voter), EInvalidNewVoter);
-    ReplaceVoter { new_voter, old_voter }
+    let replace_voter = ReplaceVoter { new_voter, old_voter };
+    assert_valid_proposal(&replace_voter, quorum_upgrade);
+    replace_voter
 }
 
 public fun execute(proposal: Proposal<ReplaceVoter>, quorum_upgrade: &mut QuorumUpgrade) {
@@ -34,4 +34,11 @@ public fun execute(proposal: Proposal<ReplaceVoter>, quorum_upgrade: &mut Quorum
     } = proposal.execute(quorum_upgrade);
 
     quorum_upgrade.replace_voter(old_voter, new_voter);
+}
+
+public fun assert_valid_proposal(replace_voter: &ReplaceVoter, quorum_upgrade: &QuorumUpgrade) {
+    let new_voter = replace_voter.new_voter;
+    let old_voter = replace_voter.old_voter;
+    assert!(quorum_upgrade.voters().contains(&old_voter), EInvalidOldVoter);
+    assert!(!quorum_upgrade.voters().contains(&new_voter), EInvalidNewVoter);
 }
