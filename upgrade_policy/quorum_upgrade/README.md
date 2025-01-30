@@ -181,7 +181,7 @@ by value.
 
 Also, and for the same reasons, `quorum_upgrade_policy::destroy_proposed_upgrade`
 will not work right now. However we thought it was important to expose
-that API right now so that once shared object deletion is avaiable,
+that API right now so that once shared object deletion is available,
 `ProposedUpgrade` instances can be deleted and the storage cost recovered.
 
 We are also considering offering an alternative way to vote in a proposal by
