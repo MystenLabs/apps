@@ -172,7 +172,7 @@ proper to be able to switch those at will. It's possible that voting for a trans
 is all that will be required, however we are still considering the alternatives.
 
 Shared object deletion is coming very soon, and today the policy protocol is
-not as seemless as it could be if that feature was already available. In
+not as seamless as it could be if that feature was already available. In
 an ideal scenario the `quorum_upgrade_policy::authorize_upgrade` should
 take the `ProposedUpgrade` by value and destroy it. But that does not work
 for now. As soon as shared object deletion is enabled we may decide to
