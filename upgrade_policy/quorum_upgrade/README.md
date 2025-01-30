@@ -86,7 +86,7 @@ A voter has the following responsibilities:
 There are 3 main objects that play a role in a **Quorum Upgrade Policy**:
 1. `QuorumUpgradeCap`: this is the capability that wraps the original `UpgradeCap` for the
 package in question. That object is returned to the sender which can save it
-according to its usage. The `QuorumUpgradeCap` is used for proposing and commiting an upgrade.
+according to its usage. The `QuorumUpgradeCap` is used for proposing and committing an upgrade.
 So whoever the proposer of the upgrade is, they must have access to a reference of
 that object. Typically the package developer will own that object.
 2. `VotingCap`: all registered addresses, the possible voters on the policy, will receive
