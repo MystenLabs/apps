@@ -33,6 +33,7 @@ fun flow() {
         let item: TestItem = bag.claim(
             &claim_proof,
             ts::receiving_ticket_by_id(item_ids.pop_back()),
+            scenario.ctx(),
         );
         sui::transfer::transfer(item, USER_TWO);
     };
@@ -142,6 +143,7 @@ fun tries_to_claim_non_existing_id() {
     let _item: TestItem = bag.claim(
         &claim_proof,
         ts::receiving_ticket_by_id(random_item_id),
+        scenario.ctx(),
     );
 
     abort 1337
@@ -164,6 +166,7 @@ fun try_to_claim_with_invalid_proof() {
     let _item: TestItem = bag.claim(
         &claim_proof_two,
         ts::receiving_ticket_by_id(vector::pop_back(&mut item_ids)),
+        scenario.ctx(),
     );
 
     abort 1337
