@@ -61,9 +61,9 @@ public fun vote<T>(
     quorum_upgrade: &QuorumUpgrade,
     ctx: &mut TxContext,
 ) {
-    assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
+    validate_proposal!<T>(quorum_upgrade, proposal, ctx.sender());
     assert!(!proposal.votes.contains(&ctx.sender()), EVoteAlreadyCounted);
-    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
+
     proposal.votes.push_back(ctx.sender());
     events::emit_vote_cast_event(proposal.id.to_inner(), ctx.sender());
     if (proposal.quorum_reached(quorum_upgrade)) {
@@ -76,8 +76,7 @@ public fun remove_vote<T>(
     quorum_upgrade: &QuorumUpgrade,
     ctx: &mut TxContext,
 ) {
-    assert!(quorum_upgrade.voters().contains(&ctx.sender()), EUnauthorizedCaller);
-    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
+    validate_proposal!<T>(quorum_upgrade, proposal, ctx.sender());
 
     let (vote_exists, index) = proposal.votes.index_of(&ctx.sender());
     assert!(vote_exists, ENoVoteFound);
@@ -120,6 +119,18 @@ public(package) fun delete<T>(proposal: Proposal<T>): T {
     } = proposal;
     id.delete();
     data
+}
+
+macro fun validate_proposal<$T>(
+    $quorum_upgrade: &QuorumUpgrade,
+    $proposal: &Proposal<$T>,
+    $sender: address,
+) {
+    let quorum_upgrade = $quorum_upgrade;
+    let proposal = $proposal;
+    let sender = $sender;
+    assert!(quorum_upgrade.voters().contains(&sender), EUnauthorizedCaller);
+    assert!(proposal.quorum_upgrade == object::id(quorum_upgrade), EProposalQuorumMismatch);
 }
 
 // ~~~~~~~ Getters ~~~~~~~                                                                                                                                                                                                                                                                                                                                                              ~~~~~~~
