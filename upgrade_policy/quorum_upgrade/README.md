@@ -153,7 +153,7 @@ proposal is destroyed.
 
 ## Limitation and Future 
 In principle the **Quorum Upgrade Policy Package** should be immutable given
-that an adversarial upgrade to that policy could comprimise the policy
+that an adversarial upgrade to that policy could compromise the policy
 itself. However we at Mysten have plan to update that code to provide
 important missing features. It was critical to get the policy in place as soon
 as possible in order for DeFi protocols to start using it, and to give users a
