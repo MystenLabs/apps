@@ -288,7 +288,7 @@ module suifrens::genesis_tests {
         //Increase Epoch X+1
         tx_context::increment_epoch_number(ts::ctx(&mut test));
 
-        //Mix Capy Again... This should passs
+        //Mix Capy Again... This should pass
         let _mixedCapy2 = capy_labs::mix(&mut capy_labs, &mut  _mixedCapy, &mut  _capy2, &clock, &mut coin_to_pay_mix2, ts::ctx(&mut test));
 
         sf::test_destroy_admin_cap(admin_cap);
