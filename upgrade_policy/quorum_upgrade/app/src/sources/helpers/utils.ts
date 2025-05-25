@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { SuiParsedData } from '@mysten/sui.js/client';
-import { TransactionArgument, TransactionBlock } from '@mysten/sui.js/transactions';
+import { SuiParsedData } from '@mysten/sui/client';
+import { TransactionArgument, Transaction } from '@mysten/sui/transactions';
 
 export type AvailableTabs = 'upgrade-policy' | 'new-quorum-upgrade';
 
@@ -86,7 +86,7 @@ export const UPGRADE_POLICY_PACKAGE_ADDRESS: Record<string, string> = {
 
 /// Construct a VecSet of addresses.
 export const prepareAddressVecSet = (
-	txb: TransactionBlock,
+	txb: Transaction,
 	voters: string[],
 ): TransactionArgument => {
 	const vecSet = txb.moveCall({

@@ -1,8 +1,8 @@
 
 import { KioskClient, KioskOwnerCap, KioskTransaction, Network } from "@mysten/kiosk";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-import { TransactionBlock } from "@mysten/sui.js/transactions";
-import { normalizeStructTag, parseStructTag } from "@mysten/sui.js/utils"
+import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
+import { Transaction } from "@mysten/sui/transactions";
+import { normalizeStructTag, parseStructTag } from "@mysten/sui/utils"
 
 const TESTNET_ENHANCED_FRENS_PACKAGE_ID = `0x8b80449490f01439af54f0b86bc0c41cef7d3c3bb7ce81e3fd075d5d6d1b1653`
 const TESTNET_SUIFREN_OUTER_TYPE = `0x80d7de9c4a56194087e0ba0bf59492aa8e6a5ee881606226930827085ddf2332::suifrens::SuiFren`;
@@ -71,7 +71,7 @@ const exampleRegister = async () => {
 
     // We initialize a Kiosk Transaction.
     const kioskTx = new KioskTransaction({
-        transactionBlock: new TransactionBlock(),
+        transaction: new Transaction(),
         kioskClient,
         cap: kioskCapWithFrens
     });
@@ -83,11 +83,11 @@ const exampleRegister = async () => {
         itemType: selectedFren.type,
         itemId: selectedFren.objectId
     }, (fren) => {
-        kioskTx.transactionBlock.moveCall({
+        kioskTx.transaction.moveCall({
             target: `${TESTNET_ENHANCED_FRENS_PACKAGE_ID}::enhanced_frens::register`,
             arguments: [
                 fren,
-                kioskTx.transactionBlock.pure.string("An awesome nickname!")
+                kioskTx.transaction.pure.string("An awesome nickname!")
             ],
             typeArguments: [getSuiFrenInnerType(selectedFren.type)]
         });
@@ -96,10 +96,10 @@ const exampleRegister = async () => {
     kioskTx.finalize();
 
     // We set the sender to make sure dry-run works as expected!
-    kioskTx.transactionBlock.setSender(TESTNET_ADDRESS_WITH_KIOSK);
+    kioskTx.transaction.setSender(TESTNET_ADDRESS_WITH_KIOSK);
 
     const result = await suiClient.dryRunTransactionBlock({
-        transactionBlock: await kioskTx.transactionBlock.build({
+        transactionBlock: await kioskTx.transaction.build({
             client: suiClient
         }),
     });

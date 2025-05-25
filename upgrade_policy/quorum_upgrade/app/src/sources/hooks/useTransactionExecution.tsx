@@ -1,9 +1,9 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
-import { useSignTransactionBlock, useSuiClient } from '@mysten/dapp-kit';
-import { SuiTransactionBlockResponse } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { isValidSuiAddress, toB64 } from '@mysten/sui.js/utils';
+import { useSignTransaction, useSuiClient } from '@mysten/dapp-kit';
+import { SuiTransactionBlockResponse } from '@mysten/sui/client';
+import { Transaction } from '@mysten/sui/transactions';
+import { isValidSuiAddress, toBase64 } from '@mysten/sui/utils';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -13,7 +13,7 @@ export function useTransactionExecution() {
 	const { isMultisig, multisigAddress } = useMultisigAddressContext();
 
 	const client = useSuiClient();
-	const { mutateAsync: signTransactionBlock } = useSignTransactionBlock();
+	const { mutateAsync: signTransactionBlock } = useSignTransaction();
 	const [txData, setTxData] = useState<string | undefined>(undefined);
 
 	const reset = () => {
@@ -21,7 +21,7 @@ export function useTransactionExecution() {
 	};
 
 	const executeTransaction = async (
-		txb: TransactionBlock,
+		txb: Transaction,
 	): Promise<SuiTransactionBlockResponse | void> => {
 		if (isMultisig) {
 			if (!multisigAddress || !isValidSuiAddress(multisigAddress)) {
@@ -31,7 +31,7 @@ export function useTransactionExecution() {
 
 			txb.setSender(multisigAddress);
 
-			const txData = toB64(
+			const txData = toBase64(
 				await txb.build({
 					client,
 				}),
@@ -43,11 +43,11 @@ export function useTransactionExecution() {
 
 		try {
 			const signature = await signTransactionBlock({
-				transactionBlock: txb,
+				transaction: txb,
 			});
 
 			const res = await client.executeTransactionBlock({
-				transactionBlock: signature.transactionBlockBytes,
+				transactionBlock: signature.bytes,
 				signature: signature.signature,
 				options: {
 					showEffects: true,
