@@ -1,9 +1,9 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 import { useSuiClientContext, useSuiClientQuery } from '@mysten/dapp-kit';
-import { SuiObjectChange, SuiParsedData } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { isValidSuiAddress, isValidSuiObjectId } from '@mysten/sui.js/utils';
+import { SuiObjectChange, SuiParsedData } from '@mysten/sui/client';
+import { Transaction } from '@mysten/sui/transactions';
+import { isValidSuiAddress, isValidSuiObjectId } from '@mysten/sui/utils';
 import { InfoCircledIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Grid, TextArea, TextField, Tooltip } from '@radix-ui/themes';
 import { useState } from 'react';
@@ -69,11 +69,14 @@ export function ProposeUpgrade() {
 		if (!sharedObjectId || !digest || !isValidSuiObjectId(sharedObjectId) || !getValidDigest())
 			return;
 
-		const txb = new TransactionBlock();
+		const txb = new Transaction();
 
 		txb.moveCall({
 			target: `${UPGRADE_POLICY_PACKAGE_ADDRESS[network]}::quorum_upgrade_policy::propose_upgrade`,
-			arguments: [txb.object(sharedObjectId), txb.pure([...getValidDigest()!], 'vector<u8>')],
+			arguments: [
+				txb.object(sharedObjectId),
+				txb.pure.vector('u8', getValidDigest()!), // Digest as a vector of u8
+			],
 		});
 
 		const result = await executeTransaction(txb);

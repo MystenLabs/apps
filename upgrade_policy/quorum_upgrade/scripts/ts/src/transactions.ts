@@ -1,5 +1,5 @@
 
-import { TransactionBlock } from "@mysten/sui.js/transactions";
+import { Transaction } from "@mysten/sui/transactions";
 import { getUpgradeDigest, getActiveAddress, getClient, prepareAddressVecSet, prepareMetadataVecMap, signAndExecute } from "./utils";
 
 // =================================================================
@@ -42,7 +42,7 @@ const PROPOSED_UPGRADE_ID = ``;
 /// Run after the `quorum_upgrade_policy` package has been published.
 /// After running the `QuorumUpgradeCap` will live on the address of the transaction signer.
 /// All voters will receive a `VotingCap`.
-const newQuorumUpgradeCap = (txb: TransactionBlock, requiredVotes: number, voters: string[], upgradeCapId: string, quorumCapHolderAddress: string) => {
+const newQuorumUpgradeCap = (txb: Transaction, requiredVotes: number, voters: string[], upgradeCapId: string, quorumCapHolderAddress: string) => {
 
     const quorumUpgradeCap = txb.moveCall({
         target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::new`,
@@ -59,7 +59,7 @@ const newQuorumUpgradeCap = (txb: TransactionBlock, requiredVotes: number, voter
 
 /// Calls `quorum_upgrade_policy::propose_upgrade` 
 /// Calling this will publish the `ProposedUpgrade` shared object.
-const proposeUpgrade = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string) => {
+const proposeUpgrade = (txb: Transaction, quorumUpgradeCapId: string, packagePath: string) => {
     const { digest }  = getUpgradeDigest(packagePath);
 
     txb.moveCall({
@@ -74,7 +74,7 @@ const proposeUpgrade = (txb: TransactionBlock, quorumUpgradeCapId: string, packa
 
 /// Calls `quorum_upgrade_policy::create_upgrade`, `quorum_upgrade_policy::add_all_metadata` (optional), `quorum_upgrade_policy::share_upgrade_object`,  
 /// Calling this will publish the `ProposedUpgrade` shared object.
-const proposeUpgradeWithMetadata = (txb: TransactionBlock, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: string } | null) => {
+const proposeUpgradeWithMetadata = (txb: Transaction, quorumUpgradeCapId: string, packagePath: string, metadata?: { [key: string]: string } | null) => {
     const { digest }  = getUpgradeDigest(packagePath);
 
     const proposedUpgrade = txb.moveCall({
@@ -134,7 +134,7 @@ const checkMetadata = async (proposedUpgradeObjectId: string) => {
 /// Vote for a particular `ProposedUpgrade` shared object.
 /// Use the `ProposedUpgrade` object id defined by the transaction above and the
 // `VotingCap` object id of the signer as received from the `newQuorumUpgradeCap` transaction.
-const vote = (txb: TransactionBlock, proposedUpgradeObjectId: string, votingCapObjectId: string) => {
+const vote = (txb: Transaction, proposedUpgradeObjectId: string, votingCapObjectId: string) => {
     txb.moveCall({
         target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::vote`,
         arguments: [
@@ -146,7 +146,7 @@ const vote = (txb: TransactionBlock, proposedUpgradeObjectId: string, votingCapO
 
 /// Executes a `package upgrade`.
 /// It fails if the `ProposedUpgrade` object has not reached quorum.
-const authorizeUpgrade = (txb: TransactionBlock, packageId: string, proposedUpgradeObjectId: string, quorumUpgradeCapId: string, packagePath: string) => {
+const authorizeUpgrade = (txb: Transaction, packageId: string, proposedUpgradeObjectId: string, quorumUpgradeCapId: string, packagePath: string) => {
 
     const ticket = txb.moveCall({
         target: `${QUORUM_UPGRADE_PACKAGE_ID}::quorum_upgrade_policy::authorize_upgrade_and_cleanup`,
@@ -161,7 +161,7 @@ const authorizeUpgrade = (txb: TransactionBlock, packageId: string, proposedUpgr
     const receipt = txb.upgrade({
         modules,
         dependencies,
-        packageId,
+        package : packageId,
         ticket,
     });
 
@@ -176,7 +176,7 @@ const authorizeUpgrade = (txb: TransactionBlock, packageId: string, proposedUpgr
 
 /// Main entry points, comment out as needed...
 const executeTransaction = async () => {
-    const txb = new TransactionBlock();
+    const txb = new Transaction();
 
     // 1- define a 2 out of 3 quorum upgrade policy
     newQuorumUpgradeCap(txb, 2, [VOTER_1, VOTER_2, VOTER_3], TEST_PACKAGE_UPGRADE_CAP_ID, getActiveAddress());

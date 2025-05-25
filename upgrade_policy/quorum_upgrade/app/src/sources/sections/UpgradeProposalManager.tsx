@@ -1,8 +1,8 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 import { useSuiClientContext, useSuiClientQuery } from '@mysten/dapp-kit';
-import { SuiParsedData } from '@mysten/sui.js/client';
-import { isValidSuiObjectId } from '@mysten/sui.js/utils';
+import { SuiParsedData } from '@mysten/sui/client';
+import { isValidSuiObjectId } from '@mysten/sui/utils';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { TextField } from '@radix-ui/themes';
 import { useState } from 'react';

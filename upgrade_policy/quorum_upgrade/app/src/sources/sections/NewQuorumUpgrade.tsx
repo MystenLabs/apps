@@ -1,9 +1,9 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 import { useSuiClientContext, useSuiClientQuery } from '@mysten/dapp-kit';
-import { SuiObjectChange } from '@mysten/sui.js/client';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui.js/utils';
+import { SuiObjectChange } from '@mysten/sui/client';
+import { Transaction } from '@mysten/sui/transactions';
+import { isValidSuiAddress, normalizeSuiAddress } from '@mysten/sui/utils';
 import { GridIcon, MinusIcon, PersonIcon } from '@radix-ui/react-icons';
 import { Button, Flex, Grid, TextField } from '@radix-ui/themes';
 import { useEffect, useState } from 'react';
@@ -72,7 +72,7 @@ export function NewQuorumUpgrade() {
 		) {
 			return;
 		}
-		const txb = new TransactionBlock();
+		const txb = new Transaction();
 
 		const quorumUpgradeCap = txb.moveCall({
 			target: `${UPGRADE_POLICY_PACKAGE_ADDRESS[network]}::quorum_upgrade_policy::new`,

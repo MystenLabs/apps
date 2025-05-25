@@ -2,10 +2,10 @@ import { readFileSync } from "fs";
 import { homedir } from "os";
 import path from "path";
 
-import { getFullnodeUrl, SuiClient } from '@mysten/sui.js/client';
-import { Ed25519Keypair } from '@mysten/sui.js/keypairs/ed25519';
-import { TransactionArgument, TransactionBlock } from '@mysten/sui.js/transactions';
-import { fromB64 } from '@mysten/sui.js/utils';
+import { getFullnodeUrl, SuiClient } from '@mysten/sui/client';
+import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
+import { TransactionArgument, Transaction } from '@mysten/sui/transactions';
+import { fromBase64 } from '@mysten/sui/utils';
 import { execSync } from "child_process";
 
 export type Network = 'mainnet' | 'testnet' | 'devnet' | 'localnet'
@@ -29,7 +29,7 @@ export const getSigner = () => {
     );
 
     for (const priv of keystore) {
-        const raw = fromB64(priv);
+        const raw = fromBase64(priv);
         if (raw[0] !== 0) {
             continue;
         }
@@ -59,7 +59,7 @@ export const getClient = (network: Network) => {
 }
 
 /// Construct a VecSet of addresses.
-export const prepareAddressVecSet = (txb: TransactionBlock, voters: string[]): TransactionArgument => {
+export const prepareAddressVecSet = (txb: Transaction, voters: string[]): TransactionArgument => {
     const vecSet = txb.moveCall({
         target: `0x2::vec_set::empty`,
         typeArguments: ['address']
@@ -80,7 +80,7 @@ export const prepareAddressVecSet = (txb: TransactionBlock, voters: string[]): T
 }
 
 /// Construct a VecMap of (string, vector<u8>) key-value pairs.
-export const prepareMetadataVecMap = (txb: TransactionBlock, metadata: { [key: string]: string }): TransactionArgument => {
+export const prepareMetadataVecMap = (txb: Transaction, metadata: { [key: string]: string }): TransactionArgument => {
     const vecMap = txb.moveCall({
         target: `0x2::vec_map::empty`,
         typeArguments: ['0x1::string::String', '0x1::string::String']
@@ -101,12 +101,12 @@ export const prepareMetadataVecMap = (txb: TransactionBlock, metadata: { [key: s
 }
 
 /// A helper to sign & execute a transaction.
-export const signAndExecute = async (txb: TransactionBlock, network: Network) => {
+export const signAndExecute = async (txb: Transaction, network: Network) => {
     const client = getClient(network);
     const signer = getSigner();
 
-    return client.signAndExecuteTransactionBlock({
-        transactionBlock: txb,
+    return client.signAndExecuteTransaction({
+        transaction: txb,
         signer,
         options: {
             showEffects: true,

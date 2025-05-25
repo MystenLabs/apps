@@ -1,7 +1,7 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 import { useSuiClientContext, useSuiClientQuery } from '@mysten/dapp-kit';
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { Button, Grid } from '@radix-ui/themes';
 
 import {
@@ -78,7 +78,7 @@ export function ProposedUpgradeOverview({
 	];
 
 	const vote = async () => {
-		const txb = new TransactionBlock();
+		const txb = new Transaction();
 
 		txb.moveCall({
 			target: `${UPGRADE_POLICY_PACKAGE_ADDRESS[network]}::quorum_upgrade_policy::vote`,
