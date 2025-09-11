@@ -7,12 +7,8 @@
 ///
 module kiosk::personal_kiosk;
 
-use std::option::{Self, Option};
 use sui::dynamic_field as df;
 use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
-use sui::object::{Self, ID, UID};
-use sui::transfer;
-use sui::tx_context::{sender, TxContext};
 
 /// Trying to return the Cap / Borrow to a wrong PersonalKioskCap object.
 const EIncorrectCapObject: u64 = 0;
@@ -50,7 +46,7 @@ entry fun default(kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {
 /// The `PersonalKioskCap` is returned to allow chaining within a PTB, but
 /// the value must be consumed by the `transfer_to_sender` call in any case.
 public fun new(kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext): PersonalKioskCap {
-    create(kiosk, cap, sender(ctx), ctx)
+    create(kiosk, cap, ctx.sender(), ctx)
 }
 
 /// Create a `PersonalKiosk` for `recipient`.
@@ -75,10 +71,10 @@ fun create(
     owner: address,
     ctx: &mut TxContext,
 ): PersonalKioskCap {
-    assert!(kiosk::has_access(kiosk, &cap), EWrongKiosk);
+    assert!(kiosk.has_access(&cap), EWrongKiosk);
 
     // set the owner property of the Kiosk
-    kiosk::set_owner_custom(kiosk, &cap, owner);
+    kiosk.set_owner_custom(&cap, owner);
 
     // add the owner marker to the Kiosk; uses `_as_owner` to always pass,
     // even if Kiosk "allow_extensions" is set to false
@@ -156,5 +152,5 @@ public fun try_owner(kiosk: &Kiosk): Option<address> {
 
 /// Transfer the `PersonalKioskCap` to the transaction sender.
 public fun transfer_to_sender(self: PersonalKioskCap, ctx: &mut TxContext) {
-    transfer::transfer(self, sender(ctx));
+    transfer::transfer(self, ctx.sender());
 }

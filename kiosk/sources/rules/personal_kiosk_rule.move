@@ -21,7 +21,7 @@
 module kiosk::personal_kiosk_rule;
 
 use kiosk::personal_kiosk;
-use sui::kiosk::{Self, Kiosk};
+use sui::kiosk::Kiosk;
 use sui::transfer_policy::{Self as policy, TransferPolicy, TransferPolicyCap, TransferRequest};
 
 /// An item hasn't been placed into the Kiosk before the call.
@@ -40,7 +40,8 @@ public fun add<T>(policy: &mut TransferPolicy<T>, cap: &TransferPolicyCap<T>) {
 /// Make sure that the destination Kiosk has the Owner key. Item is already
 /// placed by the time this check is performed - otherwise fails.
 public fun prove<T>(kiosk: &Kiosk, request: &mut TransferRequest<T>) {
-    assert!(kiosk::has_item(kiosk, policy::item(request)), EItemNotInKiosk);
+    let item = request.item();
+    assert!(kiosk.has_item(item), EItemNotInKiosk);
     assert!(personal_kiosk::is_personal(kiosk), EKioskNotOwned);
 
     policy::add_receipt(Rule {}, request)

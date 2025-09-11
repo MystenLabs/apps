@@ -8,15 +8,14 @@ module kiosk::kiosk_lock_rule_tests;
 use kiosk::kiosk_lock_rule as kiosk_lock;
 use sui::kiosk;
 use sui::kiosk_test_utils::{Self as test, Asset};
-use sui::transfer;
 use sui::transfer_policy as policy;
 
 #[test]
 fun test_item_always_locked() {
     let ctx = &mut test::ctx();
     let (_, _, carl) = test::folks();
-    let (policy, policy_cap) = test::get_policy(ctx);
-    let (kiosk, kiosk_cap) = test::get_kiosk(ctx);
+    let (mut policy, policy_cap) = test::get_policy(ctx);
+    let (mut kiosk, kiosk_cap) = test::get_kiosk(ctx);
     let (item, item_id) = test::get_asset(ctx);
     let payment = test::get_sui(1000, ctx);
 
@@ -31,12 +30,12 @@ fun test_item_always_locked() {
     // Bob the Buyer
     // - places the item into his Kiosk and gets the proof
     // - prove placing and confirm request
-    let (bob_kiosk, bob_kiosk_cap) = test::get_kiosk(ctx);
-    let (item, request) = kiosk::purchase<Asset>(&mut kiosk, item_id, payment);
+    let (mut bob_kiosk, bob_kiosk_cap) = test::get_kiosk(ctx);
+    let (item, mut request) = kiosk::purchase<Asset>(&mut kiosk, item_id, payment);
     kiosk::lock(&mut bob_kiosk, &bob_kiosk_cap, &policy, item);
 
     // The difference!
-    kiosk_lock::prove(&mut request, &mut bob_kiosk);
+    kiosk_lock::prove(&mut request, &bob_kiosk);
     policy::confirm_request(&policy, request);
 
     // Carl the Cleaner;

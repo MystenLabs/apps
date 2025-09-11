@@ -29,7 +29,7 @@
 ///
 module kiosk::royalty_rule;
 
-use sui::coin::{Self, Coin};
+use sui::coin::Coin;
 use sui::sui::SUI;
 use sui::transfer_policy::{Self as policy, TransferPolicy, TransferPolicyCap, TransferRequest};
 
@@ -75,7 +75,7 @@ public fun pay<T: key + store>(
     request: &mut TransferRequest<T>,
     payment: Coin<SUI>,
 ) {
-    let paid = policy::paid(request);
+    let paid = request.paid();
     let amount = fee_amount(policy, paid);
 
     assert!(payment.value() == amount, EInsufficientAmount);

@@ -41,6 +41,6 @@ public fun prove<T: key + store, Proof: drop>(
     policy: &TransferPolicy<T>,
     request: &mut TransferRequest<T>,
 ) {
-    assert!(policy::has_rule<T, Rule<Proof>>(policy), ERuleNotFound);
+    assert!(policy.has_rule<T, Rule<Proof>>(), ERuleNotFound);
     policy::add_receipt(Rule<Proof> {}, request)
 }

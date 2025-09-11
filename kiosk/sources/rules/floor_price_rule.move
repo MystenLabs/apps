@@ -38,7 +38,7 @@ public fun add<T>(policy: &mut TransferPolicy<T>, cap: &TransferPolicyCap<T>, fl
 public fun prove<T>(policy: &mut TransferPolicy<T>, request: &mut TransferRequest<T>) {
     let config: &Config = policy::get_rule(Rule {}, policy);
 
-    assert!(policy::paid(request) >= config.floor_price, EPriceTooSmall);
+    assert!(request.paid() >= config.floor_price, EPriceTooSmall);
 
     policy::add_receipt(Rule {}, request)
 }
