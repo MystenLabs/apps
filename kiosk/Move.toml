@@ -1,5 +1,6 @@
 [package]
 name = "Kiosk"
+edition = "2024.beta" # or (just) "2024"
 version = "0.0.2"
 
 [dependencies]

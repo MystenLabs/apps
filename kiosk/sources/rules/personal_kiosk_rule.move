@@ -30,7 +30,7 @@ const EItemNotInKiosk: u64 = 0;
 const EKioskNotOwned: u64 = 1;
 
 /// The Rule checking that the Kiosk is an owned one.
-struct Rule has drop {}
+public struct Rule has drop {}
 
 /// Add the "owned" rule to the KioskOwnerCap.
 public fun add<T>(policy: &mut TransferPolicy<T>, cap: &TransferPolicyCap<T>) {

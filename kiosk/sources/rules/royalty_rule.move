@@ -42,7 +42,7 @@ const EInsufficientAmount: u64 = 1;
 const MAX_BPS: u16 = 10_000;
 
 /// The "Rule" witness to authorize the policy.
-struct Rule has drop {}
+public struct Rule has drop {}
 
 /// Configuration for the Rule. The `amount_bp` is the percentage
 /// of the transfer amount to be paid as a royalty fee. The `min_amount`
@@ -51,7 +51,7 @@ struct Rule has drop {}
 ///
 /// Adding a mininum amount is useful to enforce a fixed fee even if
 /// the transfer amount is very small or 0.
-struct Config has drop, store {
+public struct Config has drop, store {
     amount_bp: u16,
     min_amount: u64,
 }
@@ -78,7 +78,7 @@ public fun pay<T: key + store>(
     let paid = policy::paid(request);
     let amount = fee_amount(policy, paid);
 
-    assert!(coin::value(&payment) == amount, EInsufficientAmount);
+    assert!(payment.value() == amount, EInsufficientAmount);
 
     policy::add_to_balance(Rule {}, policy, payment);
     policy::add_receipt(Rule {}, request)
@@ -88,7 +88,7 @@ public fun pay<T: key + store>(
 /// Can be used dry-runned to estimate the fee amount based on the Kiosk listing price.
 public fun fee_amount<T: key + store>(policy: &TransferPolicy<T>, paid: u64): u64 {
     let config: &Config = policy::get_rule(Rule {}, policy);
-    let amount = (((paid as u128) * (config.amount_bp as u128) / 10_000) as u64);
+    let mut amount = (((paid as u128) * (config.amount_bp as u128) / 10_000) as u64);
 
     // If the amount is less than the minimum, use the minimum
     if (amount < config.min_amount) {

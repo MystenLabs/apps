@@ -28,10 +28,10 @@ use sui::transfer_policy::{Self as policy, TransferPolicy, TransferPolicyCap, Tr
 const ENotInKiosk: u64 = 0;
 
 /// The type identifier for the Rule.
-struct Rule has drop {}
+public struct Rule has drop {}
 
 /// An empty configuration for the Rule.
-struct Config has drop, store {}
+public struct Config has drop, store {}
 
 /// Creator: Adds a `kiosk_lock_rule` Rule to the `TransferPolicy` forcing
 /// buyers to lock the item in a Kiosk on purchase.

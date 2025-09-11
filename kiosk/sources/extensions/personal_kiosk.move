@@ -25,21 +25,21 @@ const EWrongKiosk: u64 = 3;
 
 /// A key-only wrapper for the KioskOwnerCap. Makes sure that the Kiosk can
 /// not be traded altogether with its contents.
-struct PersonalKioskCap has key {
+public struct PersonalKioskCap has key {
     id: UID,
     cap: Option<KioskOwnerCap>,
 }
 
 /// The hot potato making sure the KioskOwnerCap is returned after borrowing.
-struct Borrow { cap_id: ID, owned_id: ID }
+public struct Borrow { cap_id: ID, owned_id: ID }
 
 /// The dynamic field to mark the Kiosk as owned (to allow guaranteed owner
 /// checks through the Kiosk).
-struct OwnerMarker has copy, drop, store {}
+public struct OwnerMarker has copy, drop, store {}
 
 /// Event that is emitted when a new PersonalKioskCap is created. The sender
 /// of the transaction is always the new Kiosk Owner.
-struct NewPersonalKiosk has copy, drop { kiosk_id: ID }
+public struct NewPersonalKiosk has copy, drop { kiosk_id: ID }
 
 /// The default setup for the PersonalKioskCap.
 entry fun default(kiosk: &mut Kiosk, cap: KioskOwnerCap, ctx: &mut TxContext) {

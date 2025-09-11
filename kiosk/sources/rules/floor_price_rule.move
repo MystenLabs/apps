@@ -19,12 +19,12 @@ use sui::transfer_policy::{Self as policy, TransferPolicy, TransferPolicyCap, Tr
 const EPriceTooSmall: u64 = 0;
 
 /// The "Rule" witness to authorize the policy.
-struct Rule has drop {}
+public struct Rule has drop {}
 
 /// Configuration for the `Floor Price Rule`.
 /// It holds the minimum price that an item can be sold at.
 /// There can't be any sales with a price < than the floor_price.
-struct Config has drop, store {
+public struct Config has drop, store {
     floor_price: u64,
 }
 

@@ -23,7 +23,7 @@ use sui::transfer_policy::{Self as policy, TransferPolicy, TransferPolicyCap, Tr
 const ERuleNotFound: u64 = 0;
 
 /// Custom witness-key for the "proof policy".
-struct Rule<phantom Proof: drop> has drop {}
+public struct Rule<phantom Proof: drop> has drop {}
 
 /// Creator action: adds the Rule.
 /// Requires a "Proof" witness confirmation on every transfer.
