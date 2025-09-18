@@ -23,7 +23,7 @@ public(package) fun new_quorum_upgrade() {
     scenario.next_tx(voter1);
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     assert!(quorum_upgrade.required_votes() == 2);
-    assert!(quorum_upgrade.voters().size() == 3);
+    assert!(quorum_upgrade.voters().length() == 3);
 
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
@@ -40,7 +40,7 @@ fun replace_quorum_voter_by_owner() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     quorum_upgrade.replace_self(new_voter, scenario.ctx());
 
-    assert!(quorum_upgrade.voters().size() == 3);
+    assert!(quorum_upgrade.voters().length() == 3);
     assert!(quorum_upgrade.voters().contains(&new_voter));
 
     transfer::public_share_object(quorum_upgrade);
@@ -58,7 +58,7 @@ fun add_voter() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     quorum_upgrade.add_voter(new_voter);
 
-    assert!(quorum_upgrade.voters().size() == 4);
+    assert!(quorum_upgrade.voters().length() == 4);
     assert!(quorum_upgrade.voters().contains(&new_voter));
 
     transfer::public_share_object(quorum_upgrade);
@@ -76,7 +76,7 @@ fun remove_voter() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     quorum_upgrade.remove_voter(voter2);
 
-    assert!(quorum_upgrade.voters().size() == 2);
+    assert!(quorum_upgrade.voters().length() == 2);
     assert!(!quorum_upgrade.voters().contains(&voter2));
 
     transfer::public_share_object(quorum_upgrade);
@@ -94,7 +94,7 @@ fun replace_voter() {
     quorum_upgrade = scenario.take_shared<QuorumUpgrade>();
     quorum_upgrade.replace_voter(voter2, new_voter);
 
-    assert!(quorum_upgrade.voters().size() == 3);
+    assert!(quorum_upgrade.voters().length() == 3);
     assert!(!quorum_upgrade.voters().contains(&voter2));
     assert!(quorum_upgrade.voters().contains(&new_voter));
 

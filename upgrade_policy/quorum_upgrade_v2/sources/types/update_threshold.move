@@ -33,5 +33,5 @@ public fun assert_valid_proposal(
 ) {
     let new_required_votes = update_threshold.new_required_votes;
     assert!(new_required_votes > 0, ERequiredVotesZero);
-    assert!(new_required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
+    assert!(new_required_votes <= quorum_upgrade.voters().length() as u64, EInvalidRequiredVotes);
 }

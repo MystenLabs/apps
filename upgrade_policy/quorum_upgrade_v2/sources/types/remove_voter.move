@@ -51,12 +51,12 @@ public fun assert_valid_proposal(remove_voter: &RemoveVoter, quorum_upgrade: &Qu
         let required_votes = new_required_votes.borrow();
         assert!(*required_votes > 0, ERequiredVotesZero);
         assert!(
-            *required_votes <= quorum_upgrade.voters().size() as u64 - 1,
+            *required_votes <= quorum_upgrade.voters().length() as u64 - 1,
             EInvalidRequiredVotes,
         );
     } else {
         assert!(
-            quorum_upgrade.voters().size() - 1 >= quorum_upgrade.required_votes(),
+            quorum_upgrade.voters().length() - 1 >= quorum_upgrade.required_votes(),
             EInvalidRequiredVotes,
         );
     };
