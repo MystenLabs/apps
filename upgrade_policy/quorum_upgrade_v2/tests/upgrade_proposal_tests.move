@@ -12,7 +12,6 @@ use sui::package;
 use sui::test_scenario;
 use sui::vec_map;
 
-// TODO:
 #[test]
 fun upgrade_proposal() {
     new_quorum_upgrade();

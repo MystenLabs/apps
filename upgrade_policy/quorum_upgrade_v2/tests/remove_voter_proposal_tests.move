@@ -32,7 +32,7 @@ fun remove_voter_proposal() {
     assert!(proposal.votes().contains(&voter2));
     scenario.next_tx(voter1);
     remove_voter::execute(proposal, &mut quorum_upgrade);
-    assert!(quorum_upgrade.voters().size() == 2);
+    assert!(quorum_upgrade.voters().length() == 2);
     assert!(!quorum_upgrade.voters().contains(&voter3));
     transfer::public_share_object(quorum_upgrade);
     scenario.end();
@@ -59,7 +59,7 @@ fun remove_voter_and_update_required() {
     assert!(proposal.votes().contains(&voter2));
     scenario.next_tx(voter1);
     remove_voter::execute(proposal, &mut quorum_upgrade);
-    assert!(quorum_upgrade.voters().size() == 2);
+    assert!(quorum_upgrade.voters().length() == 2);
     assert!(!quorum_upgrade.voters().contains(&voter3));
     assert!(quorum_upgrade.required_votes() == 1);
     transfer::public_share_object(quorum_upgrade);

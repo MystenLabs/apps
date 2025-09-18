@@ -48,7 +48,7 @@ public fun assert_valid_proposal(add_voter: &AddVoter, quorum_upgrade: &QuorumUp
     if (new_required_votes.is_some()) {
         let required_votes = new_required_votes.borrow();
         assert!(*required_votes > 0, ERequiredVotesZero);
-        assert!(*required_votes <= quorum_upgrade.voters().size() as u64, EInvalidRequiredVotes);
+        assert!(*required_votes <= quorum_upgrade.voters().length() as u64, EInvalidRequiredVotes);
     };
 }
 

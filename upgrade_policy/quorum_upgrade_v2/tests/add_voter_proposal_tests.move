@@ -35,7 +35,7 @@ fun add_voter_proposal() {
     scenario.next_tx(voter3);
     add_voter::execute(proposal, &mut quorum_upgrade);
 
-    assert!(quorum_upgrade.voters().size() == 4);
+    assert!(quorum_upgrade.voters().length() == 4);
     assert!(quorum_upgrade.voters().contains(&new_voter));
 
     transfer::public_share_object(quorum_upgrade);
@@ -68,7 +68,7 @@ fun add_voter_update_required_votes() {
 
     scenario.next_tx(voter3);
     add_voter::execute(proposal, &mut quorum_upgrade);
-    assert!(quorum_upgrade.voters().size() == 4);
+    assert!(quorum_upgrade.voters().length() == 4);
     assert!(quorum_upgrade.voters().contains(&new_voter));
 
     transfer::public_share_object(quorum_upgrade);

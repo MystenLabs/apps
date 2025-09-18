@@ -46,7 +46,7 @@ fun update_threshold_proposal() {
 
     scenario.next_tx(voter3);
     update_threshold::execute(proposal, &mut quorum_upgrade);
-    assert!(quorum_upgrade.voters().size() == 3);
+    assert!(quorum_upgrade.voters().length() == 3);
     assert!(quorum_upgrade.required_votes() == 3);
 
     transfer::public_share_object(quorum_upgrade);

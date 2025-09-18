@@ -6,6 +6,7 @@ edition = "2024.beta"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+quorum_upgrade_v2 = { local = "../quorum_upgrade_v2" }
 
 [addresses]
 quorum_upgrade_policy = "0xae627358027f3b53865d2403ecf5573c91d543a387d653764b650b8f85a2235c"

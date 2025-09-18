@@ -36,7 +36,7 @@ public fun new(
     ctx: &mut TxContext,
 ) {
     assert!(required_votes > 0, EInvalidZeroRequiredVotes);
-    assert!(voters.size() >= required_votes, EInvalidVoters);
+    assert!(voters.length() >= required_votes, EInvalidVoters);
 
     let id = object::new(ctx);
     let quorum_upgrade = QuorumUpgrade {

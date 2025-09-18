@@ -38,7 +38,7 @@ fun replace_voter_proposal() {
 
     scenario.next_tx(voter3);
     replace_voter::execute(proposal, &mut quorum_upgrade);
-    assert!(quorum_upgrade.voters().size() == 3);
+    assert!(quorum_upgrade.voters().length() == 3);
     assert!(!quorum_upgrade.voters().contains(&voter3));
     assert!(quorum_upgrade.voters().contains(&new_voter));
 
