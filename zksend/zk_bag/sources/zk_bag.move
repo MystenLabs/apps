@@ -13,6 +13,7 @@ module zk_bag::zk_bag;
 use sui::table::{Self, Table};
 use sui::transfer::Receiving;
 use sui::vec_set::{Self, VecSet};
+use sui::event::{Self};
 
 /// Capping this at 50 items as a limit based on business requirements.
 /// WARNING: DO NOT EXCEED THE MAXIMUM INPUTs IN A PTB LIMIT,
@@ -33,6 +34,35 @@ const EClaimAddressAlreadyExists: u64 = 5;
 const EClaimAddressNotExists: u64 = 6;
 /// Claims an item that does not exist.
 const EItemNotExists: u64 = 7;
+
+
+/// Event emitted when a new ZkBag is created
+public struct BagCreatedEvent has copy, drop {
+    bag_id: ID,
+    creator: address,
+}
+
+/// Event emitted when an item of type T is added to a ZkBag
+public struct BagItemAddedEvent<phantom T> has copy, drop {
+    bag_id: ID,
+    item_id: ID,
+    creator: address,
+}
+
+/// Event emitted when all items in a ZkBag are claimed
+public struct BagClaimedEvent has copy, drop {
+    bag_id: ID,
+    creator: address,
+    receiver: address,
+}
+
+/// Event emitted when ownership of a ZkBag is transferred to a new address
+public struct BagOwnerUpdatedEvent has copy, drop {
+    bag_id: ID,
+    old_owner: address,
+    new_owner: address,
+}
+
 
 /// A store that holds all the bags to prevent needing
 /// the objectId in the URL of requests.
@@ -69,15 +99,22 @@ fun init(ctx: &mut TxContext) {
 public fun new(store: &mut BagStore, receiver: address, ctx: &mut TxContext) {
     assert!(!store.items.contains(receiver), EClaimAddressAlreadyExists);
 
+    let zk_bag = ZkBag {
+        id: object::new(ctx),
+        owner: ctx.sender(),
+        item_ids: vec_set::empty(),
+    };
+    
+    event::emit(BagCreatedEvent {
+        bag_id: object::id(&zk_bag),
+        creator: ctx.sender(),
+    });
+
     store
         .items
         .add(
             receiver,
-            ZkBag {
-                id: object::new(ctx),
-                owner: ctx.sender(),
-                item_ids: vec_set::empty(),
-            },
+            zk_bag,
         );
 }
 
@@ -102,6 +139,12 @@ public fun add<T: key + store>(
     // all items in a single-go.
     bag.item_ids.insert(object::id_address(&item));
 
+    event::emit(BagItemAddedEvent<T> {
+        bag_id: object::id(bag),
+        item_id: object::id(&item),
+        creator: ctx.sender(),
+    });
+
     // TTO (Transfer to Object) the item to the bag.
     transfer::public_transfer(item, object::id_address(bag));
 }
@@ -119,6 +162,12 @@ public fun init_claim(
     let claim_proof = BagClaim {
         bag_id: object::id(&bag),
     };
+
+    event::emit(BagClaimedEvent {
+        bag_id: object::id(&bag),
+        creator: bag.owner,
+        receiver: receiver,
+    });
 
     (bag, claim_proof)
 }
@@ -138,6 +187,12 @@ public fun reclaim(
         bag_id: bag.id.to_inner(),
     };
 
+    event::emit(BagClaimedEvent {
+        bag_id: bag.id.to_inner(),
+        creator: bag.owner,
+        receiver: receiver,
+    });
+
     (bag, claim_proof)
 }
 
@@ -154,6 +209,12 @@ public fun update_receiver(
     let bag = store.items.remove(from);
     // validate that the sender is the owner of the bag.
     assert!(bag.owner == ctx.sender(), EUnauthorized);
+    
+    event::emit(BagOwnerUpdatedEvent {
+        bag_id: object::id(&bag),
+        old_owner: from,
+        new_owner: to,
+    });
 
     store.items.add(to, bag);
 }
@@ -165,6 +226,7 @@ public fun claim<T: key + store>(
     bag: &mut ZkBag,
     claim: &BagClaim,
     receiving: Receiving<T>,
+    ctx: &mut TxContext,
 ): T {
     assert!(bag.is_valid_claim_object(claim), EUnauthorizedProof);
 
