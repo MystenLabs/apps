@@ -147,7 +147,7 @@ module quorum_upgrade_policy::quorum_upgrade_policy {
         signer: address,
     }
 
-    /// A succesful upgrade.
+    /// A successful upgrade.
     public struct UpgradePerformed has copy, drop {
         /// The instance of the quorum upgrade policy.
         upgrade_cap: ID,
