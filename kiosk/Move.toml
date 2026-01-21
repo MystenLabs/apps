@@ -1,9 +1,9 @@
 [package]
 name = "Kiosk"
+edition = "2024.beta" # or (just) "2024"
 version = "0.0.2"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 [addresses]
 kiosk = "0x0"
