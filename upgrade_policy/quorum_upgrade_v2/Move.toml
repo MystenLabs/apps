@@ -1,0 +1,11 @@
+[package]
+name = "quorum_upgrade_v2"
+edition = "2024.beta"
+version = "0.0.1"
+published-at = "0x565f0f84b23e5d167ddf5efed362787d3ad2a9a5cdf86e76cfdca285a2debdf4"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+
+[addresses]
+quorum_upgrade_v2 = "0x0"
